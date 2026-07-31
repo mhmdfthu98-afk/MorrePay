@@ -3,165 +3,394 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MORREPAY | المحفظة العالمية</title>
+    <title>MORRE PAY | المحفظة</title>
     
     <!-- ===== المكتبات ===== -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- ===== Firebase SDK ===== -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     
     <style>
-        /* ===== الأنماط ===== */
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Cairo', 'Inter', sans-serif; }
+        /* =============================================
+           الأنماط الرئيسية
+           ============================================= */
         
-        :root {
-            --primary: #1A73E8;
-            --primary-dark: #1557B0;
-            --primary-light: #4285F4;
-            --secondary: #34A853;
-            --danger: #EA4335;
-            --warning: #FBBC04;
-            --background: #F0F4F8;
-            --surface: #FFFFFF;
-            --text-primary: #1F2937;
-            --text-secondary: #4B5563;
-            --text-tertiary: #9CA3AF;
-            --border: #E5E7EB;
-            --shadow: 0 4px 24px rgba(0,0,0,0.06);
-            --shadow-hover: 0 8px 32px rgba(26,115,232,0.12);
-            --radius: 16px;
-            --radius-sm: 10px;
-            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Cairo', sans-serif; }
+        
+        body {
+            background: #F0F4F8;
+            min-height: 100vh;
+            overflow-x: hidden;
+            padding-bottom: 80px;
+            direction: rtl;
         }
         
-        body { background: var(--background); color: var(--text-primary); min-height: 100vh; overflow-x: hidden; padding-bottom: 80px; direction: rtl; }
-        .app-container { max-width: 480px; margin: 0 auto; background: var(--surface); min-height: 100vh; position: relative; box-shadow: 0 0 40px rgba(0,0,0,0.04); }
+        .app-container {
+            max-width: 480px;
+            margin: 0 auto;
+            background: #FFFFFF;
+            min-height: 100vh;
+            position: relative;
+            box-shadow: 0 0 40px rgba(0,0,0,0.04);
+        }
         
-        .glass { background: rgba(255,255,255,0.85); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.3); border-radius: var(--radius); box-shadow: var(--shadow); }
-        .glass-card { background: rgba(255,255,255,0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.3); border-radius: var(--radius); transition: var(--transition); cursor: pointer; position: relative; overflow: hidden; }
-        .glass-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-hover); }
-        .glass-card:active { transform: scale(0.97); }
+        /* ===== تأثير الزجاج ===== */
+        .glass {
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+        }
         
+        .glass-card {
+            background: rgba(255,255,255,0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 16px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .glass-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 32px rgba(26,115,232,0.12);
+        }
+        .glass-card:active {
+            transform: scale(0.97);
+        }
+        
+        /* ===== بطاقة MORRE PAY ===== */
         .morre-card {
             background: linear-gradient(135deg, #1A73E8, #0D47A1, #1A73E8);
             background-size: 200% 200%;
             animation: gradientMove 6s ease infinite;
-            border-radius: var(--radius);
+            border-radius: 16px;
             padding: 1.5rem;
             color: white;
             box-shadow: 0 12px 40px rgba(26,115,232,0.35);
             position: relative;
             overflow: hidden;
-            min-height: 220px;
+            min-height: 200px;
         }
-        @keyframes gradientMove { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
-        .morre-card::after { content: ''; position: absolute; top: -60px; right: -60px; width: 200px; height: 200px; background: radial-gradient(circle, rgba(255,255,255,0.06), transparent 70%); border-radius: 50%; pointer-events: none; }
-        .morre-card::before { content: ''; position: absolute; bottom: -40px; left: -40px; width: 150px; height: 150px; background: radial-gradient(circle, rgba(255,255,255,0.04), transparent 70%); border-radius: 50%; pointer-events: none; }
-        .morre-card .card-number { font-size: 1.4rem; font-weight: 700; letter-spacing: 2px; font-family: 'Inter', monospace; margin: 0.5rem 0; text-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .morre-card .card-chip { font-size: 2rem; opacity: 0.8; }
         
-        .btn-primary { background: var(--primary); color: white; padding: 0.75rem 1.5rem; border-radius: var(--radius-sm); border: none; font-weight: 700; font-size: 1rem; cursor: pointer; transition: var(--transition); width: 100%; position: relative; overflow: hidden; }
-        .btn-primary:hover { background: var(--primary-dark); transform: translateY(-2px); box-shadow: 0 8px 25px rgba(26,115,232,0.3); }
-        .btn-primary:active { transform: scale(0.97); }
-        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        @keyframes gradientMove {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
         
-        .form-input { width: 100%; padding: 0.75rem 1rem; border: 2px solid var(--border); border-radius: var(--radius-sm); font-size: 0.95rem; transition: var(--transition); background: rgba(255,255,255,0.6); color: var(--text-primary); text-align: right; }
-        .form-input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px rgba(26,115,232,0.08); }
-        .form-input::placeholder { color: var(--text-tertiary); }
-        .form-label { display: block; font-size: 0.85rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem; }
+        .morre-card::after {
+            content: '';
+            position: absolute;
+            top: -60px;
+            right: -60px;
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(255,255,255,0.06), transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
         
-        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(255,255,255,0.95); backdrop-filter: blur(20px); border-top: 1px solid rgba(0,0,0,0.04); display: flex; justify-content: space-around; align-items: center; padding: 6px 0 12px; z-index: 9999; box-shadow: 0 -4px 20px rgba(0,0,0,0.04); max-width: 480px; margin: 0 auto; }
-        .bottom-nav .nav-item { display: flex; flex-direction: column; align-items: center; gap: 2px; color: var(--text-tertiary); font-size: 0.5rem; font-weight: 600; cursor: pointer; padding: 4px 12px; border: none; background: transparent; transition: var(--transition); position: relative; }
-        .bottom-nav .nav-item i { font-size: 1.3rem; transition: var(--transition); }
-        .bottom-nav .nav-item span { font-size: 0.55rem; font-weight: 700; }
-        .bottom-nav .nav-item.active { color: var(--primary); }
-        .bottom-nav .nav-item.active i { transform: translateY(-3px); }
-        .bottom-nav .nav-item .badge { position: absolute; top: -2px; right: 4px; background: var(--danger); color: white; font-size: 0.5rem; border-radius: 50%; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+        .morre-card::before {
+            content: '';
+            position: absolute;
+            bottom: -40px;
+            left: -40px;
+            width: 150px;
+            height: 150px;
+            background: radial-gradient(circle, rgba(255,255,255,0.04), transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
         
-        .page { display: none; padding: 1rem; animation: fadeIn 0.3s ease; }
-        .page.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .morre-card .card-number {
+            font-size: 1.2rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            margin: 0.5rem 0;
+            font-family: 'Courier New', monospace;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
         
-        .transaction-item { display: flex; align-items: center; padding: 0.75rem 1rem; background: white; border-radius: var(--radius-sm); border: 1px solid var(--border); margin-bottom: 0.5rem; transition: var(--transition); cursor: pointer; }
-        .transaction-item:hover { border-color: var(--primary); box-shadow: var(--shadow); }
-        .transaction-icon { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; margin-left: 12px; flex-shrink: 0; }
-        .transaction-icon.credit { background: #DCFCE7; color: var(--secondary); }
-        .transaction-icon.debit { background: #FEE2E2; color: var(--danger); }
-        .transaction-icon.transfer { background: #DBEAFE; color: var(--primary); }
-        .transaction-icon.bill { background: #FEF3C7; color: var(--warning); }
-        .transaction-icon.card { background: #EDE9FE; color: #7C3AED; }
+        .morre-card .card-chip {
+            font-size: 2rem;
+            opacity: 0.8;
+        }
         
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); z-index: 99999; display: none; align-items: center; justify-content: center; padding: 20px; }
-        .modal-overlay.active { display: flex; }
-        .modal-box { background: white; border-radius: var(--radius); padding: 1.5rem; max-width: 480px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3); animation: modalSlide 0.3s ease; }
-        @keyframes modalSlide { from { opacity: 0; transform: scale(0.9) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+        /* ===== الأزرار ===== */
+        .btn-primary {
+            background: #1A73E8;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 10px;
+            border: none;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+        .btn-primary:hover {
+            background: #1557B0;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(26,115,232,0.3);
+        }
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
         
-        .toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--text-primary); color: white; padding: 12px 24px; border-radius: var(--radius-sm); font-weight: 600; z-index: 999999; opacity: 0; transition: all 0.3s ease; max-width: 90%; text-align: center; box-shadow: 0 8px 32px rgba(0,0,0,0.2); }
-        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-        .toast.success { background: var(--secondary); }
-        .toast.error { background: var(--danger); }
-        .toast.warning { background: var(--warning); color: var(--text-primary); }
+        /* ===== التنقل السفلي ===== */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(0,0,0,0.04);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 6px 0 12px;
+            z-index: 9999;
+            max-width: 480px;
+            margin: 0 auto;
+        }
         
-        .sidebar { position: fixed; top: 0; right: -320px; width: 320px; height: 100%; background: rgba(255,255,255,0.98); backdrop-filter: blur(20px); z-index: 1000; transition: right 0.3s ease; padding: 1.5rem; border-right: 1px solid rgba(0,0,0,0.04); overflow-y: auto; }
+        .bottom-nav .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            color: #9CA3AF;
+            font-size: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 4px 12px;
+            border: none;
+            background: transparent;
+            transition: all 0.3s ease;
+        }
+        .bottom-nav .nav-item i {
+            font-size: 1.3rem;
+            transition: all 0.3s ease;
+        }
+        .bottom-nav .nav-item span {
+            font-size: 0.55rem;
+            font-weight: 700;
+        }
+        .bottom-nav .nav-item.active {
+            color: #1A73E8;
+        }
+        .bottom-nav .nav-item.active i {
+            transform: translateY(-3px);
+        }
+        
+        /* ===== الصفحات ===== */
+        .page {
+            display: none;
+            padding: 1rem;
+            animation: fadeIn 0.3s ease;
+        }
+        .page.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* ===== العمليات ===== */
+        .transaction-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            background: white;
+            border-radius: 10px;
+            border: 1px solid #E5E7EB;
+            margin-bottom: 0.5rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .transaction-item:hover {
+            border-color: #1A73E8;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+        }
+        .transaction-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            margin-left: 12px;
+            flex-shrink: 0;
+        }
+        .transaction-icon.credit {
+            background: #DCFCE7;
+            color: #16A34A;
+        }
+        .transaction-icon.debit {
+            background: #FEE2E2;
+            color: #EF4444;
+        }
+        .transaction-icon.transfer {
+            background: #DBEAFE;
+            color: #1A73E8;
+        }
+        
+        /* ===== التوست ===== */
+        .toast {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #1F2937;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-weight: 600;
+            z-index: 999999;
+            opacity: 0;
+            transition: all 0.3s ease;
+            max-width: 90%;
+            text-align: center;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        .toast.success {
+            background: #16A34A;
+        }
+        .toast.error {
+            background: #EF4444;
+        }
+        
+        /* ===== شاشة التحميل ===== */
+        .loading-screen {
+            position: fixed;
+            inset: 0;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 999999;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .loader {
+            width: 48px;
+            height: 48px;
+            border: 4px solid rgba(26,115,232,0.1);
+            border-top-color: #1A73E8;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* ===== نقاط ===== */
+        .points-badge {
+            background: linear-gradient(135deg, #FBBC04, #F59E0B);
+            color: #1F2937;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 700;
+        }
+        
+        /* ===== الشريط الجانبي ===== */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            right: -320px;
+            width: 320px;
+            height: 100%;
+            background: rgba(255,255,255,0.98);
+            backdrop-filter: blur(20px);
+            z-index: 1000;
+            transition: right 0.3s ease;
+            padding: 1.5rem;
+            border-right: 1px solid rgba(0,0,0,0.04);
+            overflow-y: auto;
+        }
         .sidebar.open { right: 0; }
-        .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.25); z-index: 999; display: none; }
-        .sidebar-overlay.active { display: block; }
-        .sidebar .menu-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: var(--radius-sm); transition: var(--transition); cursor: pointer; color: var(--text-primary); text-decoration: none; width: 100%; border: none; background: transparent; font-size: 0.95rem; font-weight: 600; }
-        .sidebar .menu-item:hover { background: rgba(26,115,232,0.06); }
-        .sidebar .menu-item i { width: 24px; color: var(--primary); font-size: 1.1rem; }
-        .sidebar .menu-item.danger { color: var(--danger); }
-        .sidebar .menu-item.danger i { color: var(--danger); }
-        
-        .dark {
-            --background: #0F172A;
-            --surface: #1E293B;
-            --text-primary: #F1F5F9;
-            --text-secondary: #94A3B8;
-            --text-tertiary: #64748B;
-            --border: #334155;
-            --shadow: 0 4px 24px rgba(0,0,0,0.3);
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.25);
+            z-index: 999;
+            display: none;
         }
-        .dark .glass { background: rgba(30,41,59,0.85); border-color: rgba(255,255,255,0.05); }
-        .dark .glass-card { background: rgba(30,41,59,0.6); border-color: rgba(255,255,255,0.05); }
-        .dark .glass-card h3, .dark .glass-card p { color: var(--text-primary); }
-        .dark .bottom-nav { background: rgba(30,41,59,0.95); border-top-color: rgba(255,255,255,0.05); }
-        .dark .bottom-nav .nav-item { color: var(--text-tertiary); }
-        .dark .bottom-nav .nav-item.active { color: #6EF3E8; }
-        .dark .sidebar { background: rgba(30,41,59,0.98); }
-        .dark .sidebar .menu-item { color: var(--text-primary); }
-        .dark .modal-box { background: var(--surface); color: var(--text-primary); }
-        .dark .modal-box input, .dark .modal-box select { background: rgba(15,23,42,0.6); border-color: var(--border); color: var(--text-primary); }
-        .dark .transaction-item { background: var(--surface); border-color: var(--border); color: var(--text-primary); }
-        .dark .toast { background: var(--text-primary); color: var(--background); }
-        .dark .morre-card { background: linear-gradient(135deg, #1E293B, #0F172A, #1E293B); }
+        .sidebar-overlay.active { display: block; }
         
-        .loading-screen { position: fixed; inset: 0; background: white; display: flex; align-items: center; justify-content: center; z-index: 999999; flex-direction: column; gap: 1rem; }
-        .dark .loading-screen { background: var(--background); }
-        .loader { width: 48px; height: 48px; border: 4px solid rgba(26,115,232,0.1); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        .sidebar .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            color: #1F2937;
+            text-decoration: none;
+            width: 100%;
+            border: none;
+            background: transparent;
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+        .sidebar .menu-item:hover {
+            background: rgba(26,115,232,0.06);
+        }
+        .sidebar .menu-item i {
+            width: 24px;
+            color: #1A73E8;
+            font-size: 1.1rem;
+        }
+        .sidebar .menu-item.danger {
+            color: #EF4444;
+        }
+        .sidebar .menu-item.danger i {
+            color: #EF4444;
+        }
         
-        .points-badge { background: linear-gradient(135deg, #FBBC04, #F59E0B); color: #1F2937; padding: 2px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; }
-        .progress-bar { width: 100%; height: 6px; background: var(--border); border-radius: 10px; overflow: hidden; }
-        .progress-bar .progress-fill { height: 100%; background: var(--primary); border-radius: 10px; transition: width 0.5s ease; }
-        
-        @media (max-width: 480px) { .bottom-nav .nav-item { padding: 4px 8px; } .bottom-nav .nav-item i { font-size: 1.1rem; } .bottom-nav .nav-item span { font-size: 0.45rem; } .morre-card .card-number { font-size: 1.1rem; } .morre-card { min-height: 180px; padding: 1rem; } }
-        @media (max-width: 380px) { .bottom-nav .nav-item { padding: 2px 4px; } .bottom-nav .nav-item i { font-size: 0.9rem; } .bottom-nav .nav-item span { font-size: 0.4rem; } }
-        
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: var(--background); }
-        ::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 10px; }
+        /* ===== استجابة ===== */
+        @media (max-width: 480px) {
+            .bottom-nav .nav-item i { font-size: 1.1rem; }
+            .bottom-nav .nav-item span { font-size: 0.45rem; }
+            .morre-card { min-height: 180px; padding: 1rem; }
+            .morre-card .card-number { font-size: 1rem; }
+        }
     </style>
 </head>
 <body>
 
+    <!-- ============================================= -->
     <!-- ===== شاشة التحميل ===== -->
+    <!-- ============================================= -->
     <div id="loadingScreen" class="loading-screen">
         <div class="loader"></div>
-        <p class="text-dark font-bold text-lg">MORREPAY</p>
+        <p class="text-dark font-bold text-lg">MORRE PAY</p>
         <p class="text-dark-light text-sm">جاري تحميل المحفظة...</p>
     </div>
 
+    <!-- ============================================= -->
     <!-- ===== التطبيق الرئيسي ===== -->
+    <!-- ============================================= -->
     <div id="mainApp" class="app-container" style="display:none;">
 
         <!-- ===== الهيدر ===== -->
@@ -180,14 +409,20 @@
         <!-- ===== المحتوى ===== -->
         <div class="p-4">
 
+            <!-- ============================================= -->
             <!-- ===== الصفحة الرئيسية ===== -->
+            <!-- ============================================= -->
             <div id="page-home" class="page active">
                 
+                <!-- ===== بطاقة MORRE PAY ===== -->
                 <div class="morre-card mb-4">
                     <div class="flex justify-between items-start">
                         <div>
                             <p class="text-xs opacity-80">الرصيد المتاح</p>
-                            <p class="text-2xl font-bold"><span id="balanceDisplay">0</span> <span class="text-sm opacity-80">ج.س</span></p>
+                            <p class="text-2xl font-bold">
+                                <span id="balanceDisplay">0</span> 
+                                <span class="text-sm opacity-80">ج.س</span>
+                            </p>
                         </div>
                         <div class="card-chip"><i class="fas fa-microchip"></i></div>
                     </div>
@@ -209,6 +444,7 @@
                     </div>
                 </div>
 
+                <!-- ===== الإحصائيات ===== -->
                 <div class="grid grid-cols-4 gap-2 mb-4">
                     <div class="glass p-2 text-center rounded-xl">
                         <p class="text-xs text-dark-light">العمليات</p>
@@ -228,6 +464,7 @@
                     </div>
                 </div>
 
+                <!-- ===== الأزرار السريعة ===== -->
                 <div class="grid grid-cols-5 gap-2 mb-4">
                     <button onclick="showTransfer()" class="glass-card p-2 text-center">
                         <i class="fas fa-paper-plane text-blue-600 text-lg"></i>
@@ -251,14 +488,16 @@
                     </button>
                 </div>
 
+                <!-- ===== آخر العمليات ===== -->
                 <div class="flex justify-between items-center mb-3">
                     <h3 class="font-bold text-dark">آخر العمليات</h3>
-                    <button onclick="showPage('transactions')" class="text-blue-600 text-sm font-bold">عرض الكل</button>
+                    <button onclick="showTransactions()" class="text-blue-600 text-sm font-bold">عرض الكل</button>
                 </div>
                 <div id="recentTransactions">
                     <div class="text-center text-dark-light py-8">لا توجد عمليات بعد</div>
                 </div>
 
+                <!-- ===== كود الإحالة ===== -->
                 <div class="glass p-3 rounded-xl mt-3">
                     <div class="flex justify-between items-center">
                         <div>
@@ -272,7 +511,9 @@
                 </div>
             </div>
 
+            <!-- ============================================= -->
             <!-- ===== صفحة التحويل ===== -->
+            <!-- ============================================= -->
             <div id="page-transfer" class="page">
                 <div class="flex items-center gap-3 mb-4">
                     <button onclick="showPage('home')" class="text-dark text-xl hover:opacity-70 transition">
@@ -283,90 +524,58 @@
                 
                 <div class="glass p-4 rounded-xl">
                     <div class="mb-3">
-                        <label class="form-label">نوع التحويل</label>
-                        <select id="transferType" class="form-input">
-                            <option value="wallet">إلى محفظة MORREPAY</option>
+                        <label class="block text-sm font-bold text-dark mb-1">نوع التحويل</label>
+                        <select id="transferType" class="w-full p-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none bg-white/60">
+                            <option value="wallet">إلى محفظة MORRE PAY</option>
                             <option value="bank">تحويل بنكي</option>
                             <option value="mobile">تحويل جوال</option>
-                            <option value="card">إلى بطاقة</option>
-                            <option value="scheduled">تحويل مجدول</option>
-                            <option value="recurring">تحويل متكرر</option>
                         </select>
                     </div>
                     
                     <div id="transferWalletFields">
                         <div class="mb-3">
-                            <label class="form-label">رقم المحفظة المستلم</label>
-                            <input type="text" id="transferWallet" placeholder="أدخل رقم المحفظة" class="form-input">
+                            <label class="block text-sm font-bold text-dark mb-1">رقم المحفظة المستلم</label>
+                            <input type="text" id="transferWallet" placeholder="أدخل رقم المحفظة" class="w-full p-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none bg-white/60">
                         </div>
                     </div>
                     
                     <div id="transferBankFields" style="display:none;">
                         <div class="mb-3">
-                            <label class="form-label">البنك</label>
-                            <select id="transferBank" class="form-input">
+                            <label class="block text-sm font-bold text-dark mb-1">البنك</label>
+                            <select id="transferBank" class="w-full p-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none bg-white/60">
                                 <option value="BOK">🏦 بنك الخرطوم</option>
                                 <option value="SCB">🏦 البنك التجاري السوداني</option>
                                 <option value="FNB">🏦 بنك فيصل الإسلامي</option>
-                                <option value="BALAD">🏦 بنك بلاد</option>
-                                <option value="NBE">🏦 بنك النيل</option>
-                                <option value="BOM">🏦 بنك أم درمان</option>
                             </select>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">رقم الحساب</label>
-                            <input type="text" id="transferBankAccount" placeholder="أدخل رقم الحساب" class="form-input">
+                            <label class="block text-sm font-bold text-dark mb-1">رقم الحساب</label>
+                            <input type="text" id="transferBankAccount" placeholder="أدخل رقم الحساب" class="w-full p-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none bg-white/60">
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">اسم صاحب الحساب</label>
-                            <input type="text" id="transferBankName" placeholder="الاسم كما في البنك" class="form-input">
+                            <label class="block text-sm font-bold text-dark mb-1">اسم صاحب الحساب</label>
+                            <input type="text" id="transferBankName" placeholder="الاسم كما في البنك" class="w-full p-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none bg-white/60">
                         </div>
                     </div>
                     
                     <div id="transferMobileFields" style="display:none;">
                         <div class="mb-3">
-                            <label class="form-label">رقم الهاتف المستلم</label>
-                            <input type="tel" id="transferMobile" placeholder="0912345678" class="form-input">
+                            <label class="block text-sm font-bold text-dark mb-1">رقم الهاتف المستلم</label>
+                            <input type="tel" id="transferMobile" placeholder="0912345678" class="w-full p-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none bg-white/60">
                         </div>
                     </div>
                     
                     <div class="mb-3">
-                        <label class="form-label">المبلغ (ج.س)</label>
-                        <input type="number" id="transferAmount" placeholder="0.00" class="form-input">
+                        <label class="block text-sm font-bold text-dark mb-1">المبلغ (ج.س)</label>
+                        <input type="number" id="transferAmount" placeholder="0.00" class="w-full p-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none bg-white/60">
                     </div>
                     
                     <div class="mb-3">
-                        <label class="form-label">الوصف (اختياري)</label>
-                        <input type="text" id="transferDesc" placeholder="سبب التحويل" class="form-input">
-                    </div>
-
-                    <div id="scheduledFields" style="display:none;">
-                        <div class="mb-3">
-                            <label class="form-label">تاريخ التحويل</label>
-                            <input type="date" id="scheduledDate" class="form-input">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">وقت التحويل</label>
-                            <input type="time" id="scheduledTime" class="form-input">
-                        </div>
-                    </div>
-
-                    <div id="recurringFields" style="display:none;">
-                        <div class="mb-3">
-                            <label class="form-label">التكرار</label>
-                            <select id="recurringFrequency" class="form-input">
-                                <option value="daily">يومي</option>
-                                <option value="weekly">أسبوعي</option>
-                                <option value="monthly">شهري</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">عدد المرات</label>
-                            <input type="number" id="recurringCount" placeholder="غير محدود" class="form-input">
-                        </div>
+                        <label class="block text-sm font-bold text-dark mb-1">الوصف (اختياري)</label>
+                        <input type="text" id="transferDesc" placeholder="سبب التحويل" class="w-full p-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none bg-white/60">
                     </div>
                     
-                    <div class="bg-blue-50 dark:bg-blue-950/30 p-3 rounded-xl mb-4">
+                    <div class="bg-blue-50 p-3 rounded-xl mb-4">
                         <p class="text-sm text-dark-light">الرصيد المتاح</p>
                         <p class="text-xl font-bold text-dark"><span id="transferBalance">0</span> ج.س</p>
                         <p class="text-xs text-dark-light">الرسوم: <span id="transferFee">0</span> ج.س</p>
@@ -376,50 +585,17 @@
                         <i class="fas fa-paper-plane ml-2"></i> تأكيد التحويل
                     </button>
                 </div>
-
-                <div class="mt-3">
-                    <button onclick="showAddBeneficiary()" class="btn-outline py-2 text-sm">
-                        <i class="fas fa-user-plus ml-2"></i> إضافة مستفيد
-                    </button>
-                </div>
-
-                <div class="mt-3">
-                    <h3 class="font-bold text-dark mb-2">المستفيدين</h3>
-                    <div id="beneficiariesList">
-                        <div class="text-center text-dark-light py-4">لا يوجد مستفيدين</div>
-                    </div>
-                </div>
             </div>
 
+            <!-- ============================================= -->
             <!-- ===== صفحة العمليات ===== -->
+            <!-- ============================================= -->
             <div id="page-transactions" class="page">
                 <div class="flex items-center gap-3 mb-4">
                     <button onclick="showPage('home')" class="text-dark text-xl hover:opacity-70 transition">
                         <i class="fas fa-arrow-right"></i>
                     </button>
                     <h2 class="text-xl font-bold text-dark">جميع العمليات</h2>
-                    <button onclick="exportPDF()" class="btn-primary text-sm py-1 px-3 mr-auto">
-                        <i class="fas fa-file-pdf ml-1"></i> PDF
-                    </button>
-                </div>
-                
-                <div class="glass p-3 rounded-xl mb-3">
-                    <div class="flex gap-2">
-                        <input type="text" id="searchTransactions" placeholder="بحث..." class="form-input flex-1">
-                        <select id="filterType" class="form-input w-1/3">
-                            <option value="all">الكل</option>
-                            <option value="transfer">تحويل</option>
-                            <option value="deposit">إيداع</option>
-                            <option value="withdraw">سحب</option>
-                            <option value="bill">فاتورة</option>
-                            <option value="merchant">تاجر</option>
-                        </select>
-                    </div>
-                    <div class="flex gap-2 mt-2">
-                        <input type="date" id="filterDateFrom" class="form-input flex-1">
-                        <input type="date" id="filterDateTo" class="form-input flex-1">
-                        <button onclick="filterTransactions()" class="btn-primary py-1 px-3 text-sm">فلتر</button>
-                    </div>
                 </div>
                 
                 <div id="allTransactions">
@@ -427,23 +603,9 @@
                 </div>
             </div>
 
-            <!-- ===== صفحة البطاقات ===== -->
-            <div id="page-cards" class="page">
-                <div class="flex items-center gap-3 mb-4">
-                    <button onclick="showPage('home')" class="text-dark text-xl hover:opacity-70 transition">
-                        <i class="fas fa-arrow-right"></i>
-                    </button>
-                    <h2 class="text-xl font-bold text-dark">بطاقاتي</h2>
-                    <button onclick="showCreateCard()" class="btn-primary text-sm py-1 px-3 mr-auto">
-                        <i class="fas fa-plus ml-1"></i> إضافة
-                    </button>
-                </div>
-                <div id="cardsList">
-                    <div class="text-center text-dark-light py-8">لا توجد بطاقات</div>
-                </div>
-            </div>
-
+            <!-- ============================================= -->
             <!-- ===== صفحة QR ===== -->
+            <!-- ============================================= -->
             <div id="page-qr" class="page">
                 <div class="flex items-center gap-3 mb-4">
                     <button onclick="showPage('home')" class="text-dark text-xl hover:opacity-70 transition">
@@ -458,148 +620,12 @@
                     </div>
                     <p class="text-dark font-bold">#<span id="qrWalletID">000000</span></p>
                     <p class="text-dark-light text-sm">امسح الرمز للتحويل المباشر</p>
-                    <button onclick="downloadQR()" class="btn-primary mt-3 py-2 text-sm">
-                        <i class="fas fa-download ml-2"></i> تحميل QR
-                    </button>
-                </div>
-
-                <div class="glass p-4 rounded-xl mt-3">
-                    <h3 class="font-bold text-dark mb-2 text-center">مسح QR للدفع</h3>
-                    <button onclick="scanQR()" class="btn-primary py-2">
-                        <i class="fas fa-camera ml-2"></i> فتح الكاميرا
-                    </button>
-                    <div id="qrScannerContainer" style="display:none;" class="mt-3">
-                        <video id="qrScanner" class="w-full rounded-xl" style="max-height:300px;"></video>
-                        <button onclick="stopQRScanner()" class="btn-danger mt-2 py-1 text-sm">إغلاق</button>
-                    </div>
                 </div>
             </div>
 
-            <!-- ===== صفحة KYC ===== -->
-            <div id="page-kyc" class="page">
-                <div class="flex items-center gap-3 mb-4">
-                    <button onclick="showPage('home')" class="text-dark text-xl hover:opacity-70 transition">
-                        <i class="fas fa-arrow-right"></i>
-                    </button>
-                    <h2 class="text-xl font-bold text-dark">التحقق من الهوية</h2>
-                </div>
-                
-                <div class="glass p-4 rounded-xl">
-                    <div id="kycStatusDisplay" class="text-center mb-4">
-                        <div class="bg-yellow-50 dark:bg-yellow-950/30 p-4 rounded-xl">
-                            <i class="fas fa-clock text-yellow-600 text-2xl mb-2"></i>
-                            <p class="text-dark font-bold">قيد المراجعة</p>
-                            <p class="text-sm text-dark-light">جاري التحقق من بياناتك</p>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">نوع الهوية</label>
-                        <select id="kycType" class="form-input">
-                            <option value="passport">جواز السفر</option>
-                            <option value="national_id">الهوية الوطنية</option>
-                            <option value="driving_license">رخصة القيادة</option>
-                        </select>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">رقم الهوية</label>
-                        <input type="text" id="kycNumber" placeholder="أدخل رقم الهوية" class="form-input">
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">تاريخ الميلاد</label>
-                        <input type="date" id="kycDob" class="form-input">
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">الدولة</label>
-                        <input type="text" id="kycCountry" placeholder="الدولة" class="form-input">
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">المدينة</label>
-                        <input type="text" id="kycCity" placeholder="المدينة" class="form-input">
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">العنوان</label>
-                        <input type="text" id="kycAddress" placeholder="العنوان التفصيلي" class="form-input">
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">صورة الهوية (وجه)</label>
-                        <input type="file" id="kycFrontImage" accept="image/*" class="form-input p-2">
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">صورة الهوية (ظهر)</label>
-                        <input type="file" id="kycBackImage" accept="image/*" class="form-input p-2">
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">صورة شخصية</label>
-                        <input type="file" id="kycSelfie" accept="image/*" class="form-input p-2">
-                    </div>
-                    
-                    <button onclick="submitKYC()" class="btn-primary py-3">
-                        <i class="fas fa-id-card ml-2"></i> تقديم طلب التحقق
-                    </button>
-                </div>
-            </div>
-
-            <!-- ===== صفحة الفواتير ===== -->
-            <div id="page-bills" class="page">
-                <div class="flex items-center gap-3 mb-4">
-                    <button onclick="showPage('home')" class="text-dark text-xl hover:opacity-70 transition">
-                        <i class="fas fa-arrow-right"></i>
-                    </button>
-                    <h2 class="text-xl font-bold text-dark">دفع الفواتير</h2>
-                </div>
-                
-                <div class="glass p-4 rounded-xl">
-                    <div class="mb-3">
-                        <label class="form-label">نوع الفاتورة</label>
-                        <select id="billType" class="form-input">
-                            <option value="electricity">⚡ كهرباء</option>
-                            <option value="water">💧 مياه</option>
-                            <option value="internet">🌐 إنترنت</option>
-                            <option value="mobile">📱 فاتورة جوال</option>
-                            <option value="gas">🔥 غاز</option>
-                            <option value="education">📚 تعليم</option>
-                            <option value="health">🏥 صحة</option>
-                        </select>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">رقم العداد/الحساب</label>
-                        <input type="text" id="billAccount" placeholder="أدخل رقم العداد" class="form-input">
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">المبلغ</label>
-                        <input type="number" id="billAmount" placeholder="0.00" class="form-input">
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">الوصف (اختياري)</label>
-                        <input type="text" id="billDesc" placeholder="وصف الفاتورة" class="form-input">
-                    </div>
-                    
-                    <button onclick="payBill()" class="btn-primary py-3">
-                        <i class="fas fa-file-invoice ml-2"></i> دفع الفاتورة
-                    </button>
-                </div>
-
-                <div class="mt-3">
-                    <h3 class="font-bold text-dark mb-2">سجل الفواتير</h3>
-                    <div id="billsHistory">
-                        <div class="text-center text-dark-light py-4">لا توجد فواتير</div>
-                    </div>
-                </div>
-            </div>
-
+            <!-- ============================================= -->
             <!-- ===== صفحة الإعدادات ===== -->
+            <!-- ============================================= -->
             <div id="page-settings" class="page">
                 <div class="flex items-center gap-3 mb-4">
                     <button onclick="showPage('home')" class="text-dark text-xl hover:opacity-70 transition">
@@ -609,68 +635,19 @@
                 </div>
                 
                 <div class="glass p-4 rounded-xl space-y-3">
-                    <button onclick="changePassword()" class="w-full flex items-center gap-3 p-3 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-xl transition">
+                    <button onclick="changePassword()" class="w-full flex items-center gap-3 p-3 hover:bg-blue-50 rounded-xl transition">
                         <i class="fas fa-key text-blue-600 w-6"></i>
                         <span class="flex-1 text-right text-dark">تغيير كلمة المرور</span>
                         <i class="fas fa-chevron-left text-dark-light"></i>
                     </button>
                     
-                    <button onclick="showDevices()" class="w-full flex items-center gap-3 p-3 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-xl transition">
-                        <i class="fas fa-mobile-alt text-blue-600 w-6"></i>
-                        <span class="flex-1 text-right text-dark">الأجهزة المتصلة</span>
-                        <i class="fas fa-chevron-left text-dark-light"></i>
-                    </button>
-                    
-                    <button onclick="toggle2FA()" class="w-full flex items-center gap-3 p-3 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-xl transition">
-                        <i class="fas fa-shield-alt text-blue-600 w-6"></i>
-                        <span class="flex-1 text-right text-dark">المصادقة الثنائية</span>
-                        <span id="twoFAStatus" class="text-sm text-red-500">غير مفعلة</span>
-                    </button>
-                    
-                    <button onclick="toggleBiometric()" class="w-full flex items-center gap-3 p-3 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-xl transition">
-                        <i class="fas fa-fingerprint text-blue-600 w-6"></i>
-                        <span class="flex-1 text-right text-dark">المصادقة البيومترية</span>
-                        <span id="biometricStatus" class="text-sm text-red-500">غير مفعلة</span>
-                    </button>
-                    
-                    <button onclick="changeLanguage()" class="w-full flex items-center gap-3 p-3 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-xl transition">
-                        <i class="fas fa-language text-blue-600 w-6"></i>
-                        <span class="flex-1 text-right text-dark">اللغة</span>
-                        <span id="currentLanguage" class="text-sm text-dark-light">العربية</span>
-                        <i class="fas fa-chevron-left text-dark-light"></i>
-                    </button>
-                    
-                    <button onclick="toggleTheme()" class="w-full flex items-center gap-3 p-3 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-xl transition">
+                    <button onclick="toggleTheme()" class="w-full flex items-center gap-3 p-3 hover:bg-blue-50 rounded-xl transition">
                         <i class="fas fa-moon text-blue-600 w-6"></i>
                         <span class="flex-1 text-right text-dark">الوضع الليلي</span>
                         <i class="fas fa-chevron-left text-dark-light"></i>
                     </button>
                     
-                    <button onclick="showNotifications()" class="w-full flex items-center gap-3 p-3 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-xl transition">
-                        <i class="fas fa-bell text-blue-600 w-6"></i>
-                        <span class="flex-1 text-right text-dark">الإشعارات</span>
-                        <span id="notificationBadge" class="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">0</span>
-                    </button>
-                    
-                    <button onclick="showSupport()" class="w-full flex items-center gap-3 p-3 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-xl transition">
-                        <i class="fas fa-headset text-blue-600 w-6"></i>
-                        <span class="flex-1 text-right text-dark">الدعم الفني</span>
-                        <i class="fas fa-chevron-left text-dark-light"></i>
-                    </button>
-                    
-                    <button onclick="showTerms()" class="w-full flex items-center gap-3 p-3 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-xl transition">
-                        <i class="fas fa-file-alt text-blue-600 w-6"></i>
-                        <span class="flex-1 text-right text-dark">الشروط والأحكام</span>
-                        <i class="fas fa-chevron-left text-dark-light"></i>
-                    </button>
-                    
-                    <button onclick="showPrivacy()" class="w-full flex items-center gap-3 p-3 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-xl transition">
-                        <i class="fas fa-lock text-blue-600 w-6"></i>
-                        <span class="flex-1 text-right text-dark">سياسة الخصوصية</span>
-                        <i class="fas fa-chevron-left text-dark-light"></i>
-                    </button>
-                    
-                    <button onclick="logout()" class="w-full flex items-center gap-3 p-3 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-xl transition text-red-600">
+                    <button onclick="logout()" class="w-full flex items-center gap-3 p-3 hover:bg-red-50 rounded-xl transition text-red-600">
                         <i class="fas fa-sign-out-alt w-6"></i>
                         <span class="flex-1 text-right">تسجيل الخروج</span>
                         <i class="fas fa-chevron-left text-red-300"></i>
@@ -678,140 +655,11 @@
                 </div>
             </div>
 
-            <!-- ===== لوحة تحكم الأدمن ===== -->
-            <div id="page-admin" class="page">
-                <div class="flex items-center gap-3 mb-4">
-                    <button onclick="showPage('home')" class="text-dark text-xl hover:opacity-70 transition">
-                        <i class="fas fa-arrow-right"></i>
-                    </button>
-                    <h2 class="text-xl font-bold text-dark">👑 لوحة التحكم</h2>
-                </div>
-
-                <div class="flex flex-wrap gap-2 mb-4">
-                    <button class="admin-tab active" data-tab="dashboard" onclick="switchAdminTab('dashboard')">📊 لوحة المعلومات</button>
-                    <button class="admin-tab" data-tab="users" onclick="switchAdminTab('users')">👥 المستخدمين</button>
-                    <button class="admin-tab" data-tab="transactions" onclick="switchAdminTab('transactions')">💰 العمليات</button>
-                    <button class="admin-tab" data-tab="kyc" onclick="switchAdminTab('kyc')">🆔 طلبات KYC</button>
-                    <button class="admin-tab" data-tab="fees" onclick="switchAdminTab('fees')">💳 الرسوم</button>
-                    <button class="admin-tab" data-tab="notifications" onclick="switchAdminTab('notifications')">🔔 الإشعارات</button>
-                    <button class="admin-tab" data-tab="support" onclick="switchAdminTab('support')">🆘 الدعم</button>
-                    <button class="admin-tab" data-tab="audit" onclick="switchAdminTab('audit')">📋 سجل التدقيق</button>
-                </div>
-
-                <div id="adminDashboard" class="admin-content active">
-                    <div class="grid grid-cols-2 gap-3 mb-4">
-                        <div class="glass p-3 text-center rounded-xl">
-                            <p class="text-xs text-dark-light">👥 المستخدمين</p>
-                            <p class="text-2xl font-bold text-dark" id="adminTotalUsers">0</p>
-                        </div>
-                        <div class="glass p-3 text-center rounded-xl">
-                            <p class="text-xs text-dark-light">💰 المعاملات اليوم</p>
-                            <p class="text-2xl font-bold text-dark" id="adminTodayTransactions">0</p>
-                        </div>
-                        <div class="glass p-3 text-center rounded-xl">
-                            <p class="text-xs text-dark-light">⏳ طلبات KYC</p>
-                            <p class="text-2xl font-bold text-dark" id="adminPendingKYC">0</p>
-                        </div>
-                        <div class="glass p-3 text-center rounded-xl">
-                            <p class="text-xs text-dark-light">💵 إجمالي المبيعات</p>
-                            <p class="text-2xl font-bold text-dark" id="adminTotalSales">0</p>
-                        </div>
-                    </div>
-                    
-                    <h4 class="font-bold text-dark mb-2">آخر العمليات</h4>
-                    <div id="adminRecentTransactions">
-                        <div class="text-center text-dark-light py-4">لا توجد عمليات</div>
-                    </div>
-                </div>
-
-                <div id="adminUsers" class="admin-content" style="display:none;">
-                    <div class="flex gap-2 mb-3">
-                        <input type="text" id="adminSearchUser" placeholder="بحث عن مستخدم..." class="form-input flex-1">
-                        <button onclick="searchAdminUsers()" class="btn-primary py-1 px-3 text-sm">بحث</button>
-                    </div>
-                    <div id="adminUsersList">
-                        <div class="text-center text-dark-light py-4">جاري التحميل...</div>
-                    </div>
-                </div>
-
-                <div id="adminTransactions" class="admin-content" style="display:none;">
-                    <div class="flex gap-2 mb-3">
-                        <select id="adminTransactionFilter" class="form-input flex-1">
-                            <option value="all">الكل</option>
-                            <option value="pending">قيد الانتظار</option>
-                            <option value="processing">قيد المعالجة</option>
-                            <option value="completed">مكتملة</option>
-                            <option value="failed">فاشلة</option>
-                        </select>
-                        <button onclick="filterAdminTransactions()" class="btn-primary py-1 px-3 text-sm">فلتر</button>
-                    </div>
-                    <div id="adminTransactionsList">
-                        <div class="text-center text-dark-light py-4">جاري التحميل...</div>
-                    </div>
-                </div>
-
-                <div id="adminKYC" class="admin-content" style="display:none;">
-                    <div id="adminKYCList">
-                        <div class="text-center text-dark-light py-4">جاري التحميل...</div>
-                    </div>
-                </div>
-
-                <div id="adminFees" class="admin-content" style="display:none;">
-                    <div class="glass p-4 rounded-xl">
-                        <h4 class="font-bold text-dark mb-3">إعدادات الرسوم</h4>
-                        <div class="mb-3">
-                            <label class="form-label">رسوم التحويل (%)</label>
-                            <input type="number" id="feeTransfer" value="0.5" step="0.1" class="form-input">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">رسوم السحب (%)</label>
-                            <input type="number" id="feeWithdraw" value="1" step="0.1" class="form-input">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">الحد الأدنى للرسوم</label>
-                            <input type="number" id="feeMin" value="10" class="form-input">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">الحد الأقصى للرسوم</label>
-                            <input type="number" id="feeMax" value="500" class="form-input">
-                        </div>
-                        <button onclick="updateFees()" class="btn-primary py-2">حفظ الإعدادات</button>
-                    </div>
-                </div>
-
-                <div id="adminNotifications" class="admin-content" style="display:none;">
-                    <div class="glass p-4 rounded-xl">
-                        <h4 class="font-bold text-dark mb-3">إرسال إشعار جماعي</h4>
-                        <div class="mb-3">
-                            <label class="form-label">العنوان</label>
-                            <input type="text" id="adminNotificationTitle" placeholder="عنوان الإشعار" class="form-input">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">النص</label>
-                            <textarea id="adminNotificationBody" rows="3" placeholder="نص الإشعار" class="form-input"></textarea>
-                        </div>
-                        <button onclick="sendAdminNotification()" class="btn-primary py-2">
-                            <i class="fas fa-bell ml-2"></i> إرسال الإشعار
-                        </button>
-                    </div>
-                </div>
-
-                <div id="adminSupport" class="admin-content" style="display:none;">
-                    <div id="adminTicketsList">
-                        <div class="text-center text-dark-light py-4">جاري التحميل...</div>
-                    </div>
-                </div>
-
-                <div id="adminAudit" class="admin-content" style="display:none;">
-                    <div id="adminAuditList">
-                        <div class="text-center text-dark-light py-4">جاري التحميل...</div>
-                    </div>
-                </div>
-            </div>
-
         </div>
 
+        <!-- ============================================= -->
         <!-- ===== التنقل السفلي ===== -->
+        <!-- ============================================= -->
         <div class="bottom-nav">
             <button class="nav-item active" data-page="home" onclick="showPage('home')">
                 <i class="fas fa-home"></i>
@@ -824,7 +672,6 @@
             <button class="nav-item" data-page="transactions" onclick="showPage('transactions')">
                 <i class="fas fa-list-ul"></i>
                 <span>العمليات</span>
-                <span class="badge" id="navTransactionBadge">0</span>
             </button>
             <button class="nav-item" data-page="qr" onclick="showPage('qr')">
                 <i class="fas fa-qrcode"></i>
@@ -836,18 +683,16 @@
             </button>
         </div>
 
+        <!-- ============================================= -->
         <!-- ===== الشريط الجانبي ===== -->
+        <!-- ============================================= -->
         <div class="sidebar-overlay" id="sidebarOverlay"></div>
         <div class="sidebar" id="sidebar">
-            <div class="text-center py-4 border-b border-gray-200 dark:border-gray-700">
+            <div class="text-center py-4 border-b border-gray-200">
                 <img id="profileImg" class="w-20 h-20 rounded-full mx-auto border-2 border-blue-500" src="https://ui-avatars.com/api/?name=MORREPAY&size=100&background=1A73E8&color=fff&bold=true">
                 <h4 id="profileName" class="font-bold text-dark text-lg mt-2">مستخدم</h4>
                 <p id="profileWallet" class="text-sm text-blue-600">#000000</p>
                 <p id="profileBalance" class="text-sm text-dark-light">0 ج.س</p>
-                <div class="flex justify-center gap-4 mt-2">
-                    <span class="text-xs bg-yellow-100 dark:bg-yellow-900/30 px-2 py-0.5 rounded">⭐ <span id="profilePoints">0</span></span>
-                    <span id="profileKYC" class="text-xs bg-red-100 dark:bg-red-900/30 px-2 py-0.5 rounded text-red-600">غير موثق</span>
-                </div>
             </div>
             
             <button onclick="showPage('home');closeSidebar()" class="menu-item">
@@ -862,118 +707,50 @@
             <button onclick="showPage('qr');closeSidebar()" class="menu-item">
                 <i class="fas fa-qrcode"></i> QR Code
             </button>
-            <button onclick="showPage('cards');closeSidebar()" class="menu-item">
-                <i class="fas fa-credit-card"></i> البطاقات
-            </button>
-            <button onclick="showPage('kyc');closeSidebar()" class="menu-item">
-                <i class="fas fa-id-card"></i> التحقق (KYC)
-            </button>
-            <button onclick="showPage('bills');closeSidebar()" class="menu-item">
-                <i class="fas fa-file-invoice"></i> دفع الفواتير
-            </button>
             <button onclick="showPage('settings');closeSidebar()" class="menu-item">
                 <i class="fas fa-cog"></i> الإعدادات
             </button>
-            <button onclick="showPage('admin');closeSidebar()" class="menu-item" id="adminMenuItem" style="display:none;">
-                <i class="fas fa-crown"></i> لوحة التحكم
-            </button>
-            <div class="border-t border-gray-200 dark:border-gray-700 mt-4 pt-4">
+            <div class="border-t border-gray-200 mt-4 pt-4">
                 <button onclick="logout();closeSidebar()" class="menu-item danger">
                     <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
                 </button>
             </div>
         </div>
 
-        <!-- ===== المودال ===== -->
-        <div id="modal" class="modal-overlay">
-            <div class="modal-box">
-                <div id="modalContent"></div>
-            </div>
-        </div>
-
+        <!-- ============================================= -->
         <!-- ===== التوست ===== -->
+        <!-- ============================================= -->
         <div id="toast" class="toast"></div>
 
     </div>
 
     <!-- ============================================= -->
-    <!-- ===== Firebase Import Map ===== -->
+    <!-- ===== جافا سكريبت ===== -->
     <!-- ============================================= -->
-    <script type="importmap">
-    {
-        "imports": {
-            "firebase/app": "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js",
-            "firebase/firestore": "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js",
-            "firebase/auth": "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js",
-            "firebase/storage": "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js"
-        }
-    }
-    </script>
-
-    <!-- ============================================= -->
-    <!-- ===== JavaScript الرئيسي مع Firebase ===== -->
-    <!-- ============================================= -->
-    <script type="module">
-        // =============================================
-        // ===== استيراد Firebase =====
-        // =============================================
-        import { initializeApp } from "firebase/app";
-        import { 
-            getFirestore, 
-            doc, onSnapshot, collection, query, where, 
-            getDocs, updateDoc, increment, setDoc, 
-            serverTimestamp, getDoc, runTransaction, 
-            deleteDoc, orderBy, addDoc, writeBatch,
-            limit as firestoreLimit
-        } from "firebase/firestore";
-        import { 
-            getAuth, 
-            onAuthStateChanged, 
-            signInWithEmailAndPassword, 
-            createUserWithEmailAndPassword, 
-            signOut, 
-            sendPasswordResetEmail, 
-            updatePassword,
-            sendEmailVerification
-        } from "firebase/auth";
-        import { 
-            getStorage, 
-            ref, 
-            uploadBytes, 
-            getDownloadURL 
-        } from "firebase/storage";
-
+    <script>
         // =============================================
         // ===== 🔥 بيانات Firebase =====
         // =============================================
         const firebaseConfig = {
-            apiKey: "AIzaSyC0jzecEwKgHpxHpTi8Y-_bwwfzVdtgf3E",
-            authDomain: "khasmshop.firebaseapp.com",
-            projectId: "khasmshop",
-            storageBucket: "khasmshop.firebasestorage.app",
-            messagingSenderId: "238182001615",
-            appId: "1:238182001615:web:d77391030a40a481b440ba"
+            apiKey: "AIzaSyDywz3Cn2KkpbeBvkR-YQNJzdxENLHuqSk",
+            authDomain: "morre-pay.firebaseapp.com",
+            projectId: "morre-pay",
+            storageBucket: "morre-pay.firebasestorage.app",
+            messagingSenderId: "1047255810990",
+            appId: "1:1047255810990:web:8e067d8bc827072474be3f",
+            measurementId: "G-EZ74D6FHX1"
         };
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-        const storage = getStorage(app);
+        // ===== تهيئة Firebase =====
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
 
         // =============================================
-        // ===== قائمة الأدمن =====
-        // =============================================
-        const ADMINS = ["mhmdfthu98@gmail.com", "admin@morrepay.com"];
-
-        // =============================================
-        // ===== حالة التطبيق =====
+        // ===== متغيرات التطبيق =====
         // =============================================
         let currentUser = null;
         let userData = null;
-        let transactions = [];
-        let cards = [];
-        let beneficiaries = [];
-        let notifications = [];
         let referralCode = '';
 
         // =============================================
@@ -982,7 +759,6 @@
         const loadingScreen = document.getElementById('loadingScreen');
         const mainApp = document.getElementById('mainApp');
         const toast = document.getElementById('toast');
-        const modal = document.getElementById('modal');
 
         // =============================================
         // ===== دوال مساعدة =====
@@ -995,40 +771,10 @@
             toastEl.className = 'toast';
             if (type === 'success') toastEl.classList.add('success');
             else if (type === 'error') toastEl.classList.add('error');
-            else if (type === 'warning') toastEl.classList.add('warning');
             toastEl.classList.add('show');
             clearTimeout(toastEl._timeout);
             toastEl._timeout = setTimeout(() => toastEl.classList.remove('show'), 3500);
         }
-        window.showToast = showToast;
-
-        function openModal(html) {
-            document.getElementById('modalContent').innerHTML = html;
-            document.getElementById('modal').classList.add('active');
-            document.body.style.overflow = 'hidden';
-        }
-        window.openModal = openModal;
-
-        function closeModal() {
-            document.getElementById('modal').classList.remove('active');
-            document.body.style.overflow = '';
-        }
-        window.closeModal = closeModal;
-
-        function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('open');
-            document.getElementById('sidebarOverlay').classList.toggle('active');
-        }
-        window.toggleSidebar = toggleSidebar;
-
-        function closeSidebar() {
-            document.getElementById('sidebar').classList.remove('open');
-            document.getElementById('sidebarOverlay').classList.remove('active');
-        }
-        window.closeSidebar = closeSidebar;
-
-        document.getElementById('menuBtn').addEventListener('click', toggleSidebar);
-        document.getElementById('sidebarOverlay').addEventListener('click', closeSidebar);
 
         function showPage(page) {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -1037,14 +783,205 @@
             document.querySelectorAll('.bottom-nav .nav-item').forEach(n => n.classList.remove('active'));
             const navBtn = document.querySelector(`.bottom-nav .nav-item[data-page="${page}"]`);
             if (navBtn) navBtn.classList.add('active');
-            if (page === 'transactions') loadAllTransactions();
-            if (page === 'cards') loadCards();
-            if (page === 'qr') generateQR();
-            if (page === 'bills') loadBills();
-            if (page === 'admin') loadAdminData();
-            closeSidebar();
         }
-        window.showPage = showPage;
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+            document.getElementById('sidebarOverlay').classList.toggle('active');
+        }
+
+        function closeSidebar() {
+            document.getElementById('sidebar').classList.remove('open');
+            document.getElementById('sidebarOverlay').classList.remove('active');
+        }
+
+        document.getElementById('menuBtn').addEventListener('click', toggleSidebar);
+        document.getElementById('sidebarOverlay').addEventListener('click', closeSidebar);
+
+        // =============================================
+        // ===== تحديث واجهة المستخدم =====
+        // =============================================
+
+        function updateUI(data) {
+            userData = data;
+            
+            // تحديث الرصيد
+            document.getElementById('balanceDisplay').innerText = (data.balance || 0).toLocaleString();
+            document.getElementById('transferBalance').innerText = (data.balance || 0).toLocaleString();
+            document.getElementById('profileBalance').innerText = `${(data.balance || 0).toLocaleString()} ج.س`;
+            
+            // تحديث رقم المحفظة
+            document.getElementById('walletID').innerText = `#${data.walletID || '000000'}`;
+            document.getElementById('profileWallet').innerText = `#${data.walletID || '000000'}`;
+            document.getElementById('qrWalletID').innerText = data.walletID || '000000';
+            
+            // تحديث اسم المستخدم
+            document.getElementById('cardHolderName').innerText = data.name || 'مستخدم';
+            document.getElementById('profileName').innerText = data.name || 'مستخدم';
+            
+            // تحديث النقاط
+            document.getElementById('pointsDisplay').innerText = `⭐ ${(data.referralPoints || 0)} نقطة`;
+            document.getElementById('pointsCount').innerText = data.referralPoints || 0;
+            
+            // تحديث كود الإحالة
+            referralCode = data.referralCode || '';
+            document.getElementById('referralCode').innerText = referralCode || 'تحميل...';
+            
+            // تحديث رقم البطاقة
+            const lastFour = data.walletID ? data.walletID.slice(-4) : '4242';
+            document.getElementById('cardNumberDisplay').innerText = `•••• •••• •••• ${lastFour}`;
+            
+            // تحديث الصورة الشخصية
+            const profileImg = document.getElementById('profileImg');
+            if (profileImg) {
+                profileImg.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(data.name || 'MORREPAY')}&size=100&background=1A73E8&color=fff&bold=true`;
+            }
+        }
+
+        // =============================================
+        // ===== تحميل العمليات الأخيرة =====
+        // =============================================
+
+        async function loadRecentTransactions() {
+            if (!currentUser) return;
+            
+            const container = document.getElementById('recentTransactions');
+            try {
+                const q = await db.collection('transactions')
+                    .where('senderId', '==', currentUser.uid)
+                    .orderBy('createdAt', 'desc')
+                    .limit(5)
+                    .get();
+                
+                if (q.empty) {
+                    container.innerHTML = '<div class="text-center text-dark-light py-8">لا توجد عمليات حديثة</div>';
+                    return;
+                }
+                
+                let html = '';
+                q.forEach(doc => {
+                    const t = doc.data();
+                    const isCredit = t.type === 'deposit' || t.receiverId === currentUser.uid;
+                    const iconClass = isCredit ? 'credit' : 'debit';
+                    const iconName = isCredit ? 'fa-arrow-down' : 'fa-arrow-up';
+                    const sign = isCredit ? '+' : '-';
+                    const colorClass = isCredit ? 'text-green-600' : 'text-red-600';
+                    
+                    html += `
+                        <div class="transaction-item">
+                            <div class="transaction-icon ${iconClass}">
+                                <i class="fas ${iconName}"></i>
+                            </div>
+                            <div class="flex-1">
+                                <p class="font-bold text-dark">${t.description || 'تحويل'}</p>
+                                <p class="text-xs text-dark-light">${t.reference || doc.id}</p>
+                            </div>
+                            <div class="text-left">
+                                <p class="font-bold ${colorClass}">${sign}${t.amount.toLocaleString()} ج.س</p>
+                                <p class="text-xs text-dark-light">${t.status || 'مكتمل'}</p>
+                            </div>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading transactions:', error);
+            }
+        }
+
+        // =============================================
+        // ===== دوال الصفحات =====
+        // =============================================
+
+        function showTransfer() {
+            showPage('transfer');
+            // تغيير الحقول حسب نوع التحويل
+            document.getElementById('transferType').addEventListener('change', function() {
+                document.getElementById('transferWalletFields').style.display = this.value === 'wallet' ? 'block' : 'none';
+                document.getElementById('transferBankFields').style.display = this.value === 'bank' ? 'block' : 'none';
+                document.getElementById('transferMobileFields').style.display = this.value === 'mobile' ? 'block' : 'none';
+            });
+        }
+
+        function showDeposit() {
+            showToast('💰 سيتم توفير الإيداع قريباً', 'info');
+        }
+
+        function showWithdraw() {
+            showToast('💰 سيتم توفير السحب قريباً', 'info');
+        }
+
+        function showQR() {
+            showPage('qr');
+        }
+
+        function showBillPay() {
+            showToast('🧾 سيتم توفير دفع الفواتير قريباً', 'info');
+        }
+
+        function showTransactions() {
+            showPage('transactions');
+            // تحميل جميع العمليات
+            loadAllTransactions();
+        }
+
+        async function loadAllTransactions() {
+            if (!currentUser) return;
+            
+            const container = document.getElementById('allTransactions');
+            try {
+                const q = await db.collection('transactions')
+                    .where('senderId', '==', currentUser.uid)
+                    .orderBy('createdAt', 'desc')
+                    .get();
+                
+                if (q.empty) {
+                    container.innerHTML = '<div class="text-center text-dark-light py-8">لا توجد عمليات</div>';
+                    return;
+                }
+                
+                let html = '';
+                q.forEach(doc => {
+                    const t = doc.data();
+                    const isCredit = t.type === 'deposit' || t.receiverId === currentUser.uid;
+                    const iconClass = isCredit ? 'credit' : 'debit';
+                    const iconName = isCredit ? 'fa-arrow-down' : 'fa-arrow-up';
+                    const sign = isCredit ? '+' : '-';
+                    const colorClass = isCredit ? 'text-green-600' : 'text-red-600';
+                    
+                    html += `
+                        <div class="transaction-item">
+                            <div class="transaction-icon ${iconClass}">
+                                <i class="fas ${iconName}"></i>
+                            </div>
+                            <div class="flex-1">
+                                <p class="font-bold text-dark">${t.description || 'تحويل'}</p>
+                                <p class="text-xs text-dark-light">${t.reference || doc.id}</p>
+                            </div>
+                            <div class="text-left">
+                                <p class="font-bold ${colorClass}">${sign}${t.amount.toLocaleString()} ج.س</p>
+                                <p class="text-xs text-dark-light">${t.status || 'مكتمل'}</p>
+                            </div>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+                document.getElementById('totalTransactions').innerText = q.size;
+            } catch (error) {
+                console.error('Error loading transactions:', error);
+            }
+        }
+
+        function copyReferralCode() {
+            if (referralCode) {
+                navigator.clipboard.writeText(referralCode);
+                showToast('✅ تم نسخ كود الإحالة', 'success');
+            }
+        }
+
+        function changePassword() {
+            showToast('🔑 سيتم توفير تغيير كلمة المرور قريباً', 'info');
+        }
 
         function toggleTheme() {
             document.documentElement.classList.toggle('dark');
@@ -1053,8 +990,8 @@
             const icon = document.getElementById('themeIcon');
             if (icon) icon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
         }
-        window.toggleTheme = toggleTheme;
 
+        // استعادة الثيم
         if (localStorage.getItem('morrepay-theme') === 'dark') {
             document.documentElement.classList.add('dark');
             const icon = document.getElementById('themeIcon');
@@ -1062,112 +999,10 @@
         }
 
         // =============================================
-        // ===== تسجيل الخروج =====
-        // =============================================
-        window.logout = async () => {
-            if (confirm('⚠️ هل أنت متأكد من تسجيل الخروج؟')) {
-                try {
-                    await signOut(auth);
-                    showToast('👋 تم تسجيل الخروج بنجاح', 'success');
-                    window.location.href = 'login.html';
-                } catch (error) {
-                    showToast('❌ خطأ في تسجيل الخروج', 'error');
-                }
-            }
-        };
-
-        // =============================================
-        // ===== تحميل بيانات المستخدم =====
+        // ===== التحويل =====
         // =============================================
 
-        function updateUI(data) {
-            userData = data;
-            
-            document.getElementById('balanceDisplay').innerText = (data.balance || 0).toLocaleString();
-            document.getElementById('transferBalance').innerText = (data.balance || 0).toLocaleString();
-            document.getElementById('profileBalance').innerText = `${(data.balance || 0).toLocaleString()} ج.س`;
-            document.getElementById('walletID').innerText = `#${data.walletID || '000000'}`;
-            document.getElementById('profileWallet').innerText = `#${data.walletID || '000000'}`;
-            document.getElementById('qrWalletID').innerText = data.walletID || '000000';
-            document.getElementById('cardHolderName').innerText = data.name || 'مستخدم';
-            document.getElementById('profileName').innerText = data.name || 'مستخدم';
-            
-            const expiry = new Date();
-            expiry.setFullYear(expiry.getFullYear() + 3);
-            document.getElementById('cardExpiry').innerText = 
-                `${String(expiry.getMonth() + 1).padStart(2, '0')}/${String(expiry.getFullYear()).slice(-2)}`;
-            
-            const kycStatus = document.getElementById('kycStatus');
-            const profileKYC = document.getElementById('profileKYC');
-            if (data.isVerified) {
-                kycStatus.innerText = '✅ موثق';
-                kycStatus.className = 'bg-green-500/30 px-2 py-1 rounded text-xs';
-                profileKYC.innerText = '✅ موثق';
-                profileKYC.className = 'text-xs bg-green-100 dark:bg-green-900/30 px-2 py-0.5 rounded text-green-600';
-            } else if (data.kycStatus === 'pending') {
-                kycStatus.innerText = '⏳ قيد المراجعة';
-                kycStatus.className = 'bg-yellow-500/30 px-2 py-1 rounded text-xs';
-                profileKYC.innerText = '⏳ قيد المراجعة';
-                profileKYC.className = 'text-xs bg-yellow-100 dark:bg-yellow-900/30 px-2 py-0.5 rounded text-yellow-600';
-            } else {
-                kycStatus.innerText = '⚠️ غير موثق';
-                kycStatus.className = 'bg-red-500/30 px-2 py-1 rounded text-xs';
-                profileKYC.innerText = '⚠️ غير موثق';
-                profileKYC.className = 'text-xs bg-red-100 dark:bg-red-900/30 px-2 py-0.5 rounded text-red-600';
-            }
-            
-            document.getElementById('pointsDisplay').innerText = `⭐ ${(data.referralPoints || 0)} نقطة`;
-            document.getElementById('profilePoints').innerText = data.referralPoints || 0;
-            document.getElementById('pointsCount').innerText = data.referralPoints || 0;
-            referralCode = data.referralCode || '';
-            document.getElementById('referralCode').innerText = referralCode || 'تحميل...';
-            document.getElementById('dailyUsed').innerText = (data.dailyUsed || 0).toLocaleString();
-            document.getElementById('monthlyLimit').innerText = (data.monthlyLimit || 0).toLocaleString();
-            
-            const lastFour = data.walletID ? data.walletID.slice(-4) : '4242';
-            document.getElementById('cardNumberDisplay').innerText = `•••• •••• •••• ${lastFour}`;
-            
-            const profileImg = document.getElementById('profileImg');
-            if (profileImg) {
-                profileImg.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(data.name || 'MORREPAY')}&size=100&background=1A73E8&color=fff&bold=true`;
-            }
-            
-            const twoFAStatus = document.getElementById('twoFAStatus');
-            if (data.twoFactorEnabled) {
-                twoFAStatus.innerText = '✅ مفعلة';
-                twoFAStatus.className = 'text-sm text-green-500';
-            } else {
-                twoFAStatus.innerText = '❌ غير مفعلة';
-                twoFAStatus.className = 'text-sm text-red-500';
-            }
-            
-            const biometricStatus = document.getElementById('biometricStatus');
-            if (data.biometricEnabled) {
-                biometricStatus.innerText = '✅ مفعلة';
-                biometricStatus.className = 'text-sm text-green-500';
-            } else {
-                biometricStatus.innerText = '❌ غير مفعلة';
-                biometricStatus.className = 'text-sm text-red-500';
-            }
-            
-            const adminMenuItem = document.getElementById('adminMenuItem');
-            if (data.isAdmin) {
-                adminMenuItem.style.display = 'flex';
-            } else {
-                adminMenuItem.style.display = 'none';
-            }
-        }
-
-        // =============================================
-        // ===== العمليات المالية =====
-        // =============================================
-
-        window.processTransfer = async () => {
-            if (!auth.currentUser) {
-                showToast('❌ يرجى تسجيل الدخول أولاً', 'error');
-                return;
-            }
-            
+        function processTransfer() {
             const transferType = document.getElementById('transferType').value;
             const amount = parseFloat(document.getElementById('transferAmount').value);
             const description = document.getElementById('transferDesc').value.trim() || 'تحويل';
@@ -1182,548 +1017,67 @@
                 return;
             }
             
-            let receiverId = null;
-            let receiverWallet = null;
-            
+            let receiverWallet = '';
             if (transferType === 'wallet') {
-                const wallet = document.getElementById('transferWallet').value.trim();
-                if (!wallet) {
+                receiverWallet = document.getElementById('transferWallet').value.trim();
+                if (!receiverWallet) {
                     showToast('❌ أدخل رقم المحفظة المستلم', 'error');
                     return;
                 }
-                receiverWallet = wallet;
-                
-                try {
-                    const q = query(collection(db, "users"), where("walletID", "==", wallet));
-                    const snap = await getDocs(q);
-                    if (snap.empty) {
-                        showToast('❌ رقم المحفظة غير صحيح', 'error');
-                        return;
-                    }
-                    receiverId = snap.docs[0].id;
-                } catch (error) {
-                    showToast('❌ خطأ في البحث عن المستلم', 'error');
-                    return;
-                }
-            } else if (transferType === 'bank') {
-                const bank = document.getElementById('transferBank').value;
-                const account = document.getElementById('transferBankAccount').value.trim();
-                const name = document.getElementById('transferBankName').value.trim();
-                
-                if (!account || !name) {
-                    showToast('❌ أدخل بيانات الحساب البنكي', 'error');
-                    return;
-                }
-                
-                if (!confirm(`تأكيد تحويل بنكي:\n🏦 ${bank}\n📱 ${account}\n👤 ${name}\n💰 ${amount.toLocaleString()} ج.س`)) {
-                    return;
-                }
-                
-                try {
-                    const requestRef = doc(collection(db, "bankTransfers"));
-                    await setDoc(requestRef, {
-                        id: requestRef.id,
-                        userId: auth.currentUser.uid,
-                        bank: bank,
-                        accountNumber: account,
-                        accountName: name,
-                        amount: amount,
-                        description: description,
-                        status: 'pending',
-                        createdAt: serverTimestamp()
-                    });
-                    
-                    await updateDoc(doc(db, "users", auth.currentUser.uid), {
-                        balance: increment(-amount),
-                        frozenBalance: increment(amount),
-                        updatedAt: serverTimestamp()
-                    });
-                    
-                    showToast('✅ تم إرسال طلب التحويل البنكي بنجاح', 'success');
-                    
-                    if (userData) {
-                        userData.balance -= amount;
-                        document.getElementById('balanceDisplay').innerText = userData.balance.toLocaleString();
-                        document.getElementById('transferBalance').innerText = userData.balance.toLocaleString();
-                        document.getElementById('profileBalance').innerText = `${userData.balance.toLocaleString()} ج.س`;
-                    }
-                    
-                    document.getElementById('transferBankAccount').value = '';
-                    document.getElementById('transferBankName').value = '';
-                    document.getElementById('transferAmount').value = '';
-                    document.getElementById('transferDesc').value = '';
-                    return;
-                } catch (error) {
-                    showToast('❌ خطأ في إرسال الطلب: ' + error.message, 'error');
-                    return;
-                }
-            } else if (transferType === 'mobile') {
-                const mobile = document.getElementById('transferMobile').value.trim();
-                if (!mobile) {
-                    showToast('❌ أدخل رقم الهاتف المستلم', 'error');
-                    return;
-                }
-                
-                if (!confirm(`تأكيد تحويل جوال:\n📱 ${mobile}\n💰 ${amount.toLocaleString()} ج.س`)) {
-                    return;
-                }
-                
-                try {
-                    const requestRef = doc(collection(db, "mobileTransfers"));
-                    await setDoc(requestRef, {
-                        id: requestRef.id,
-                        userId: auth.currentUser.uid,
-                        mobile: mobile,
-                        amount: amount,
-                        description: description,
-                        status: 'pending',
-                        createdAt: serverTimestamp()
-                    });
-                    
-                    showToast('✅ تم إرسال طلب التحويل الجوال بنجاح', 'success');
-                    document.getElementById('transferMobile').value = '';
-                    document.getElementById('transferAmount').value = '';
-                    document.getElementById('transferDesc').value = '';
-                    return;
-                } catch (error) {
-                    showToast('❌ خطأ في إرسال الطلب: ' + error.message, 'error');
-                    return;
-                }
-            } else if (transferType === 'scheduled') {
-                const date = document.getElementById('scheduledDate').value;
-                const time = document.getElementById('scheduledTime').value;
-                
-                if (!date || !time) {
-                    showToast('❌ حدد تاريخ ووقت التحويل', 'error');
-                    return;
-                }
-                
-                const scheduledDateTime = new Date(`${date}T${time}`);
-                if (scheduledDateTime <= new Date()) {
-                    showToast('❌ يجب أن يكون التاريخ والوقت في المستقبل', 'error');
-                    return;
-                }
-                
-                try {
-                    const requestRef = doc(collection(db, "scheduledTransfers"));
-                    await setDoc(requestRef, {
-                        id: requestRef.id,
-                        userId: auth.currentUser.uid,
-                        receiverWallet: receiverWallet,
-                        receiverId: receiverId,
-                        amount: amount,
-                        description: description,
-                        scheduledAt: scheduledDateTime,
-                        status: 'scheduled',
-                        createdAt: serverTimestamp()
-                    });
-                    
-                    showToast('✅ تم جدولة التحويل بنجاح', 'success');
-                    document.getElementById('scheduledDate').value = '';
-                    document.getElementById('scheduledTime').value = '';
-                    document.getElementById('transferAmount').value = '';
-                    document.getElementById('transferDesc').value = '';
-                    return;
-                } catch (error) {
-                    showToast('❌ خطأ في الجدولة: ' + error.message, 'error');
-                    return;
-                }
-            } else if (transferType === 'recurring') {
-                const frequency = document.getElementById('recurringFrequency').value;
-                const count = document.getElementById('recurringCount').value;
-                
-                try {
-                    const requestRef = doc(collection(db, "recurringTransfers"));
-                    await setDoc(requestRef, {
-                        id: requestRef.id,
-                        userId: auth.currentUser.uid,
-                        receiverWallet: receiverWallet,
-                        receiverId: receiverId,
-                        amount: amount,
-                        description: description,
-                        frequency: frequency,
-                        count: count || 'unlimited',
-                        status: 'active',
-                        createdAt: serverTimestamp()
-                    });
-                    
-                    showToast('✅ تم تفعيل التحويل المتكرر بنجاح', 'success');
-                    document.getElementById('recurringFrequency').value = 'daily';
-                    document.getElementById('recurringCount').value = '';
-                    document.getElementById('transferAmount').value = '';
-                    document.getElementById('transferDesc').value = '';
-                    return;
-                } catch (error) {
-                    showToast('❌ خطأ في التفعيل: ' + error.message, 'error');
-                    return;
-                }
             }
             
-            if (transferType === 'wallet' && receiverId && receiverWallet) {
-                if (!confirm(`تأكيد تحويل ${amount.toLocaleString()} ج.س إلى المحفظة #${receiverWallet}`)) {
-                    return;
-                }
-                
-                try {
-                    const result = await runTransaction(db, async (transaction) => {
-                        const senderRef = doc(db, "users", auth.currentUser.uid);
-                        const senderDoc = await transaction.get(senderRef);
-                        if (!senderDoc.exists) throw new Error('المرسل غير موجود');
-                        const senderData = senderDoc.data();
-                        if (senderData.balance < amount) throw new Error('الرصيد غير كافي');
-                        
-                        const receiverRef = doc(db, "users", receiverId);
-                        const receiverDoc = await transaction.get(receiverRef);
-                        if (!receiverDoc.exists) throw new Error('المستلم غير موجود');
-                        const receiverData = receiverDoc.data();
-                        
-                        const feeRate = 0.005;
-                        const fee = Math.max(amount * feeRate, 1);
-                        const netAmount = amount - fee;
-                        
-                        const senderNewBalance = senderData.balance - amount;
-                        transaction.update(senderRef, {
-                            balance: senderNewBalance,
-                            dailyUsed: increment(amount),
-                            monthlyUsed: increment(amount),
-                            updatedAt: serverTimestamp()
-                        });
-                        
-                        const receiverNewBalance = (receiverData.balance || 0) + netAmount;
-                        transaction.update(receiverRef, {
-                            balance: receiverNewBalance,
-                            updatedAt: serverTimestamp()
-                        });
-                        
-                        const txnRef = doc(collection(db, "transactions"));
-                        const txnData = {
-                            id: txnRef.id,
-                            reference: `MR-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
-                            senderId: auth.currentUser.uid,
-                            senderWalletID: senderData.walletID,
-                            receiverId: receiverId,
-                            receiverWalletID: receiverWallet,
-                            amount: amount,
-                            fee: fee,
-                            netAmount: netAmount,
-                            currency: 'SDG',
-                            type: 'transfer',
-                            status: 'completed',
-                            description: description,
-                            category: 'transfer',
-                            ipAddress: 'auto',
-                            userAgent: navigator.userAgent || 'unknown',
-                            deviceId: localStorage.getItem('deviceId') || 'unknown',
-                            isFlagged: false,
-                            fraudScore: 0,
-                            requiresApproval: false,
-                            createdAt: serverTimestamp(),
-                            completedAt: serverTimestamp()
-                        };
-                        transaction.set(txnRef, txnData);
-                        
-                        const ledgerSender = doc(collection(db, "ledger"));
-                        transaction.set(ledgerSender, {
-                            userId: auth.currentUser.uid,
-                            transactionId: txnRef.id,
-                            walletId: senderData.walletID,
-                            amount: amount,
-                            balanceBefore: senderData.balance,
-                            balanceAfter: senderNewBalance,
-                            type: 'debit',
-                            description: `تحويل إلى #${receiverWallet}`,
-                            createdAt: serverTimestamp()
-                        });
-                        
-                        const ledgerReceiver = doc(collection(db, "ledger"));
-                        transaction.set(ledgerReceiver, {
-                            userId: receiverId,
-                            transactionId: txnRef.id,
-                            walletId: receiverWallet,
-                            amount: netAmount,
-                            balanceBefore: receiverData.balance || 0,
-                            balanceAfter: receiverNewBalance,
-                            type: 'credit',
-                            description: `استلام من #${senderData.walletID}`,
-                            createdAt: serverTimestamp()
-                        });
-                        
-                        const points = Math.floor(amount / 100);
-                        if (points > 0) {
-                            transaction.update(senderRef, { referralPoints: increment(points), updatedAt: serverTimestamp() });
-                            transaction.update(receiverRef, { referralPoints: increment(points), updatedAt: serverTimestamp() });
-                        }
-                        
-                        return { success: true, senderNewBalance, receiverNewBalance, txnId: txnRef.id, reference: txnData.reference, fee: fee, points: points };
-                    });
-                    
-                    if (result.success) {
-                        showToast(`✅ تم تحويل ${amount.toLocaleString()} ج.س بنجاح\n💰 الرسوم: ${result.fee.toLocaleString()} ج.س\n⭐ نقاط: ${result.points}`, 'success');
-                        
-                        if (userData) {
-                            userData.balance = result.senderNewBalance;
-                            document.getElementById('balanceDisplay').innerText = userData.balance.toLocaleString();
-                            document.getElementById('transferBalance').innerText = userData.balance.toLocaleString();
-                            document.getElementById('profileBalance').innerText = `${userData.balance.toLocaleString()} ج.س`;
-                        }
-                        
-                        document.getElementById('transferWallet').value = '';
-                        document.getElementById('transferAmount').value = '';
-                        document.getElementById('transferDesc').value = '';
-                        loadRecentTransactions();
-                    }
-                } catch (error) {
-                    showToast('❌ ' + error.message, 'error');
-                }
-            }
-        };
-
-        async function loadRecentTransactions() {
-            if (!auth.currentUser) return;
-            
-            const container = document.getElementById('recentTransactions');
-            try {
-                const q = query(
-                    collection(db, "transactions"),
-                    where("senderId", "==", auth.currentUser.uid),
-                    orderBy("createdAt", "desc"),
-                    firestoreLimit(5)
-                );
-                const snap = await getDocs(q);
-                
-                if (snap.empty) {
-                    container.innerHTML = '<div class="text-center text-dark-light py-8">لا توجد عمليات حديثة</div>';
-                    return;
-                }
-                
-                let html = '';
-                snap.forEach(doc => {
-                    const t = doc.data();
-                    const isCredit = t.type === 'deposit' || t.receiverId === auth.currentUser.uid;
-                    const iconClass = isCredit ? 'credit' : 'debit';
-                    const iconName = isCredit ? 'fa-arrow-down' : 'fa-arrow-up';
-                    const sign = isCredit ? '+' : '-';
-                    const colorClass = isCredit ? 'text-green-600' : 'text-red-600';
-                    
-                    html += `
-                        <div class="transaction-item" onclick="showTransactionDetail('${doc.id}')">
-                            <div class="transaction-icon ${iconClass}">
-                                <i class="fas ${iconName}"></i>
-                            </div>
-                            <div class="flex-1">
-                                <p class="font-bold text-dark">${t.description || 'تحويل'}</p>
-                                <p class="text-xs text-dark-light">${t.reference || doc.id}</p>
-                            </div>
-                            <div class="text-left">
-                                <p class="font-bold ${colorClass}">${sign}${t.amount.toLocaleString()} ج.س</p>
-                                <p class="text-xs text-dark-light">${t.status || 'مكتمل'}</p>
-                            </div>
-                        </div>
-                    `;
-                });
-                container.innerHTML = html;
-            } catch (error) {
-                console.error('Error loading recent transactions:', error);
+            if (confirm(`تأكيد تحويل ${amount.toLocaleString()} ج.س إلى المحفظة ${receiverWallet}`)) {
+                showToast(`✅ تم تحويل ${amount.toLocaleString()} ج.س بنجاح`, 'success');
             }
         }
 
-        async function loadAllTransactions() {
-            if (!auth.currentUser) return;
-            
-            const container = document.getElementById('allTransactions');
-            try {
-                const q = query(
-                    collection(db, "transactions"),
-                    where("senderId", "==", auth.currentUser.uid),
-                    orderBy("createdAt", "desc")
-                );
-                const snap = await getDocs(q);
-                
-                if (snap.empty) {
-                    container.innerHTML = '<div class="text-center text-dark-light py-8">لا توجد عمليات</div>';
-                    return;
-                }
-                
-                let html = '';
-                snap.forEach(doc => {
-                    const t = doc.data();
-                    const isCredit = t.type === 'deposit' || t.receiverId === auth.currentUser.uid;
-                    const iconClass = isCredit ? 'credit' : 'debit';
-                    const iconName = isCredit ? 'fa-arrow-down' : 'fa-arrow-up';
-                    const sign = isCredit ? '+' : '-';
-                    const colorClass = isCredit ? 'text-green-600' : 'text-red-600';
-                    
-                    html += `
-                        <div class="transaction-item" onclick="showTransactionDetail('${doc.id}')">
-                            <div class="transaction-icon ${iconClass}">
-                                <i class="fas ${iconName}"></i>
-                            </div>
-                            <div class="flex-1">
-                                <p class="font-bold text-dark">${t.description || 'تحويل'}</p>
-                                <p class="text-xs text-dark-light">${t.reference || doc.id}</p>
-                            </div>
-                            <div class="text-left">
-                                <p class="font-bold ${colorClass}">${sign}${t.amount.toLocaleString()} ج.س</p>
-                                <p class="text-xs text-dark-light">${t.status || 'مكتمل'}</p>
-                            </div>
-                        </div>
-                    `;
-                });
-                container.innerHTML = html;
-                document.getElementById('totalTransactions').innerText = snap.size;
-            } catch (error) {
-                console.error('Error loading transactions:', error);
+        // =============================================
+        // ===== تسجيل الخروج =====
+        // =============================================
+
+        function logout() {
+            if (confirm('⚠️ هل أنت متأكد من تسجيل الخروج؟')) {
+                auth.signOut()
+                    .then(() => {
+                        showToast('👋 تم تسجيل الخروج بنجاح', 'success');
+                        window.location.href = 'login.html';
+                    })
+                    .catch((error) => {
+                        showToast('❌ خطأ في تسجيل الخروج', 'error');
+                    });
             }
         }
-
-        window.showTransactionDetail = async (txnId) => {
-            try {
-                const docSnap = await getDoc(doc(db, "transactions", txnId));
-                if (!docSnap.exists) { showToast('❌ العملية غير موجودة', 'error'); return; }
-                const t = docSnap.data();
-                const isCredit = t.type === 'deposit' || t.receiverId === auth.currentUser.uid;
-                openModal(`
-                    <h2 class="text-xl font-bold text-dark mb-4 text-center">📋 تفاصيل العملية</h2>
-                    <div class="space-y-2">
-                        <div class="flex justify-between p-2 border-b border-gray-100">
-                            <span class="text-dark-light">المرجع</span>
-                            <span class="font-bold text-dark">${t.reference || txnId}</span>
-                        </div>
-                        <div class="flex justify-between p-2 border-b border-gray-100">
-                            <span class="text-dark-light">الوصف</span>
-                            <span class="font-bold text-dark">${t.description || 'تحويل'}</span>
-                        </div>
-                        <div class="flex justify-between p-2 border-b border-gray-100">
-                            <span class="text-dark-light">المبلغ</span>
-                            <span class="font-bold ${isCredit ? 'text-green-600' : 'text-red-600'}">${isCredit ? '+' : '-'}${t.amount.toLocaleString()} ج.س</span>
-                        </div>
-                        <div class="flex justify-between p-2 border-b border-gray-100">
-                            <span class="text-dark-light">الرسوم</span>
-                            <span class="font-bold text-dark">${(t.fee || 0).toLocaleString()} ج.س</span>
-                        </div>
-                        <div class="flex justify-between p-2 border-b border-gray-100">
-                            <span class="text-dark-light">الحالة</span>
-                            <span class="font-bold ${t.status === 'completed' ? 'text-green-600' : 'text-yellow-600'}">${t.status || 'مكتمل'}</span>
-                        </div>
-                        <div class="flex justify-between p-2">
-                            <span class="text-dark-light">التاريخ</span>
-                            <span class="font-bold text-dark">${new Date(t.createdAt?.seconds * 1000 || Date.now()).toLocaleString()}</span>
-                        </div>
-                    </div>
-                    <button onclick="closeModal()" class="w-full py-2 mt-4 text-dark-light hover:text-dark">إغلاق</button>
-                `);
-            } catch (error) {
-                showToast('❌ خطأ في جلب التفاصيل', 'error');
-            }
-        };
-
-        // =============================================
-        // ===== دوال إضافية =====
-        // =============================================
-
-        window.showTransfer = () => showPage('transfer');
-        window.showDeposit = () => showToast('💰 سيتم توفير الإيداع قريباً', 'warning');
-        window.showWithdraw = () => showToast('💰 سيتم توفير السحب قريباً', 'warning');
-        window.showQR = () => showPage('qr');
-        window.showBillPay = () => showPage('bills');
-        window.showAddBeneficiary = () => showToast('👤 سيتم توفير إضافة المستفيدين قريباً', 'warning');
-        window.exportPDF = () => showToast('📄 سيتم تصدير PDF قريباً', 'warning');
-        window.filterTransactions = () => loadAllTransactions();
-        window.copyReferralCode = () => {
-            if (referralCode) {
-                navigator.clipboard.writeText(referralCode);
-                showToast('✅ تم نسخ كود الإحالة', 'success');
-            }
-        };
-        window.showTerms = () => showToast('📜 سيتم عرض الشروط والأحكام قريباً', 'warning');
-        window.showPrivacy = () => showToast('🔒 سيتم عرض سياسة الخصوصية قريباً', 'warning');
-        window.showSupport = () => showToast('🆘 سيتم توفير الدعم الفني قريباً', 'warning');
-        window.showNotifications = () => showToast('🔔 سيتم عرض الإشعارات قريباً', 'warning');
-        window.showDevices = () => showToast('📱 سيتم عرض الأجهزة المتصلة قريباً', 'warning');
-        window.toggle2FA = () => showToast('🔐 سيتم توفير المصادقة الثنائية قريباً', 'warning');
-        window.toggleBiometric = () => showToast('👆 سيتم توفير المصادقة البيومترية قريباً', 'warning');
-        window.changeLanguage = () => showToast('🌐 سيتم توفير تغيير اللغة قريباً', 'warning');
-        window.showCreateCard = () => showToast('💳 سيتم توفير إضافة بطاقات قريباً', 'warning');
-        window.scanQR = () => showToast('📷 سيتم توفير مسح QR قريباً', 'warning');
-        window.stopQRScanner = () => showToast('📷 تم إيقاف المسح', 'warning');
-        window.downloadQR = () => showToast('📥 سيتم توفير تحميل QR قريباً', 'warning');
-        window.submitKYC = () => showToast('🆔 سيتم توفير تقديم KYC قريباً', 'warning');
-        window.payBill = () => showToast('🧾 سيتم توفير دفع الفواتير قريباً', 'warning');
-        window.loadBills = () => { document.getElementById('billsHistory').innerHTML = '<div class="text-center text-dark-light py-4">لا توجد فواتير</div>'; };
-        window.loadBeneficiaries = () => { document.getElementById('beneficiariesList').innerHTML = '<div class="text-center text-dark-light py-4">لا يوجد مستفيدين</div>'; };
-        window.loadCards = () => { document.getElementById('cardsList').innerHTML = '<div class="text-center text-dark-light py-8">لا توجد بطاقات</div>'; };
-        window.loadNotifications = () => {};
-        window.generateQR = () => {
-            const wallet = userData?.walletID || '000000';
-            document.getElementById('qrCodeImage').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=MORREPAY-${wallet}`;
-        };
-        window.switchAdminTab = (tab) => {
-            document.querySelectorAll('.admin-content').forEach(el => el.style.display = 'none');
-            document.querySelectorAll('.admin-tab').forEach(el => el.classList.remove('active'));
-            const map = { dashboard: 'adminDashboard', users: 'adminUsers', transactions: 'adminTransactions', kyc: 'adminKYC', fees: 'adminFees', notifications: 'adminNotifications', support: 'adminSupport', audit: 'adminAudit' };
-            document.getElementById(map[tab]).style.display = 'block';
-            document.querySelector(`.admin-tab[data-tab="${tab}"]`).classList.add('active');
-        };
-        window.loadAdminData = () => {
-            document.getElementById('adminTotalUsers').innerText = '0';
-            document.getElementById('adminTodayTransactions').innerText = '0';
-            document.getElementById('adminPendingKYC').innerText = '0';
-            document.getElementById('adminTotalSales').innerText = '0';
-        };
-        window.searchAdminUsers = () => {};
-        window.filterAdminTransactions = () => {};
-        window.updateFees = () => showToast('✅ تم حفظ الإعدادات', 'success');
-        window.sendAdminNotification = () => showToast('✅ تم إرسال الإشعار', 'success');
 
         // =============================================
         // ===== حالة المصادقة =====
         // =============================================
-        onAuthStateChanged(auth, async (user) => {
+
+        auth.onAuthStateChanged((user) => {
             loadingScreen.style.display = 'none';
             
             if (user) {
                 currentUser = user;
                 mainApp.style.display = 'block';
                 
-                onSnapshot(doc(db, "users", user.uid), (snap) => {
+                // تحميل بيانات المستخدم
+                db.collection('users').doc(user.uid).onSnapshot((snap) => {
                     if (snap.exists()) {
                         const data = snap.data();
                         updateUI(data);
                         loadRecentTransactions();
-                        loadCards();
-                        loadBeneficiaries();
-                        loadNotifications();
-                        loadBills();
-                        generateQR();
                     }
                 });
-                
-                const q = query(collection(db, "transactions"), where("senderId", "==", user.uid));
-                const snap = await getDocs(q);
-                document.getElementById('totalTransactions').innerText = snap.size;
-                
-                const notifQuery = query(collection(db, "notifications"), where("userId", "==", user.uid), where("isRead", "==", false));
-                const notifSnap = await getDocs(notifQuery);
-                const badge = document.getElementById('notificationBadge');
-                const navBadge = document.getElementById('navTransactionBadge');
-                if (badge) badge.innerText = notifSnap.size;
-                if (navBadge) navBadge.innerText = notifSnap.size;
-                
             } else {
                 mainApp.style.display = 'none';
                 currentUser = null;
                 userData = null;
-                // إعادة توجيه إلى صفحة تسجيل الدخول
                 window.location.href = 'login.html';
             }
         });
 
-        console.log('🏦 MORREPAY - المحفظة العالمية');
-        console.log('📱 جاري تحميل التطبيق...');
-        console.log('✅ MORREPAY جاهز للاستخدام مع Firebase!');
-        console.log('🔗 مرتبط بـ login.html لتسجيل الدخول');
-        console.log('💡 جميع البيانات حقيقية من Firebase');
+        console.log('✅ MORRE PAY - المحفظة جاهزة!');
+        console.log('📱 Project ID:', firebaseConfig.projectId);
     </script>
 
 </body>
-                                                                            </html>
+                                </html>
