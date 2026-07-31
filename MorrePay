@@ -1,0 +1,1452 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Wallet | المحفظة العالمية</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+
+    <style>
+        * { font-family: 'Cairo', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #F0F4F8; min-height: 100vh; overflow-x: hidden; padding-bottom: 80px; }
+        
+        .glass { background: rgba(255,255,255,0.85); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.3); border-radius: 1.5rem; box-shadow: 0 8px 32px rgba(0,0,0,0.06); }
+        .glass-card { background: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.3); border-radius: 1.5rem; transition: all 0.3s ease; cursor: pointer; }
+        .glass-card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(26,115,232,0.08); }
+        .glass-card:active { transform: scale(0.97); }
+        
+        /* ===== البطاقة البنكية ===== */
+        .bank-card {
+            background: linear-gradient(135deg, #1A73E8, #0D47A1, #1A73E8);
+            background-size: 200% 200%;
+            animation: gradientMove 4s ease infinite;
+            border-radius: 1.5rem;
+            padding: 1.5rem;
+            color: white;
+            box-shadow: 0 12px 40px rgba(26,115,232,0.35);
+            position: relative;
+            overflow: hidden;
+            min-height: 200px;
+        }
+        @keyframes gradientMove { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        
+        .bank-card::after {
+            content: '';
+            position: absolute;
+            top: -60px;
+            right: -60px;
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(255,255,255,0.06), transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        .bank-card::before {
+            content: '';
+            position: absolute;
+            bottom: -40px;
+            left: -40px;
+            width: 150px;
+            height: 150px;
+            background: radial-gradient(circle, rgba(255,255,255,0.04), transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        
+        .bank-card .card-number { font-size: 1.5rem; font-weight: 700; letter-spacing: 2px; margin: 0.5rem 0; font-family: 'Courier New', monospace; }
+        .bank-card .card-chip { font-size: 2rem; opacity: 0.8; }
+        
+        /* ===== التنقل السفلي ===== */
+        .bottom-nav {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: rgba(255,255,255,0.95);
+            border-top: 1px solid rgba(0,0,0,0.04);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 6px 0 10px;
+            z-index: 9999;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.04);
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        .bottom-nav .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            color: #94a3b8;
+            font-size: 0.55rem;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 4px 12px;
+            border: none;
+            background: transparent;
+            transition: all 0.3s ease;
+        }
+        .bottom-nav .nav-item i { font-size: 1.3rem; transition: all 0.3s ease; }
+        .bottom-nav .nav-item.active { color: #1A73E8; }
+        .bottom-nav .nav-item.active i { transform: translateY(-3px); }
+        .bottom-nav .nav-item:hover { color: #1A73E8; }
+        
+        /* ===== القائمة الجانبية ===== */
+        .sidebar {
+            position: fixed; top: 0; right: -320px; width: 320px; height: 100%;
+            background: rgba(255,255,255,0.98); backdrop-filter: blur(20px);
+            z-index: 1000; transition: right 0.3s ease;
+            padding: 1.5rem; border-right: 1px solid rgba(0,0,0,0.04);
+        }
+        .sidebar.open { right: 0; }
+        .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.25); z-index: 999; display: none; }
+        .sidebar-overlay.active { display: block; }
+        
+        /* ===== المودال ===== */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px);
+            z-index: 99999; display: none; align-items: center; justify-content: center;
+            padding: 20px;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-box {
+            background: white; border-radius: 1.5rem; padding: 1.5rem;
+            max-width: 480px; width: 100%; max-height: 90vh; overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: modalSlide 0.3s ease;
+        }
+        @keyframes modalSlide { 0% { opacity: 0; transform: scale(0.9) translateY(20px); } 100% { opacity: 1; transform: scale(1) translateY(0); } }
+        
+        .modal-box input, .modal-box select {
+            width: 100%; padding: 0.75rem 1rem; border: 2px solid #e2e8f0; border-radius: 1rem;
+            margin-bottom: 0.75rem; font-size: 0.95rem; transition: border-color 0.2s ease;
+            text-align: right; background: #f8fafc;
+        }
+        .modal-box input:focus, .modal-box select:focus {
+            outline: none; border-color: #1A73E8; box-shadow: 0 0 0 4px rgba(26,115,232,0.08);
+        }
+        
+        .btn-primary { background: #1A73E8; color: white; padding: 0.75rem 1.5rem; border-radius: 1rem; border: none; font-weight: 700; font-size: 1rem; cursor: pointer; transition: all 0.3s ease; }
+        .btn-primary:hover { background: #1557B0; transform: translateY(-2px); box-shadow: 0 8px 25px rgba(26,115,232,0.3); }
+        .btn-primary:active { transform: scale(0.97); }
+        .btn-success { background: #16A34A; color: white; }
+        .btn-success:hover { background: #15803D; }
+        .btn-danger { background: #EF4444; color: white; }
+        .btn-danger:hover { background: #DC2626; }
+        .btn-outline { background: transparent; color: #1A73E8; border: 2px solid #1A73E8; }
+        .btn-outline:hover { background: #1A73E8; color: white; }
+        
+        /* ===== صفحة المحفظة ===== */
+        .page { display: none; }
+        .page.active { display: block; }
+        
+        /* ===== قائمة العمليات ===== */
+        .transaction-item {
+            display: flex; align-items: center; padding: 0.75rem 1rem;
+            background: white; border-radius: 0.75rem; border: 1px solid #f1f5f9;
+            margin-bottom: 0.5rem; transition: all 0.3s ease;
+        }
+        .transaction-item:hover { border-color: #1A73E8; box-shadow: 0 4px 12px rgba(0,0,0,0.04); }
+        .transaction-icon { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem; margin-left: 12px; flex-shrink: 0; }
+        .transaction-icon.credit { background: #DCFCE7; color: #16A34A; }
+        .transaction-icon.debit { background: #FEE2E2; color: #EF4444; }
+        .transaction-icon.transfer { background: #DBEAFE; color: #1A73E8; }
+        
+        /* ===== الردود ===== */
+        .toast {
+            position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(100px);
+            background: #1e293b; color: white; padding: 12px 24px; border-radius: 12px;
+            font-weight: 600; z-index: 999999; opacity: 0; transition: all 0.3s ease;
+            max-width: 90%; text-align: center;
+        }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        
+        /* ===== الوضع الليلي ===== */
+        .dark body { background: #0F172A; }
+        .dark .glass { background: rgba(30,41,59,0.85); border-color: rgba(255,255,255,0.05); }
+        .dark .glass-card { background: rgba(30,41,59,0.6); }
+        .dark .glass-card h3, .dark .glass-card p { color: #f1f5f9; }
+        .dark .bottom-nav { background: rgba(30,41,59,0.95); border-top-color: rgba(255,255,255,0.05); }
+        .dark .bottom-nav .nav-item { color: #64748b; }
+        .dark .bottom-nav .nav-item.active { color: #6EF3E8; }
+        .dark .sidebar { background: rgba(30,41,59,0.98); }
+        .dark .sidebar .text-dark { color: #f1f5f9; }
+        .dark .modal-box { background: #1e293b; color: #f1f5f9; }
+        .dark .modal-box input, .dark .modal-box select { background: #0F172A; border-color: #334155; color: #f1f5f9; }
+        .dark .modal-box input:focus { border-color: #1A73E8; }
+        .dark .transaction-item { background: #1e293b; border-color: #334155; color: #f1f5f9; }
+        .dark .toast { background: #f1f5f9; color: #1e293b; }
+        .dark .text-dark { color: #f1f5f9; }
+        .dark .text-dark-light { color: #94a3b8; }
+        
+        /* ===== Scrollbar ===== */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #1A73E8; border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+    <!-- ===== شاشة التحميل ===== -->
+    <div id="loadingScreen" class="fixed inset-0 bg-white/90 backdrop-blur flex items-center justify-center z-50">
+        <div class="text-center">
+            <div class="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+            <p class="mt-4 text-dark font-bold">جاري تحميل المحفظة...</p>
+        </div>
+    </div>
+
+    <!-- ===== شاشة تسجيل الدخول ===== -->
+    <div id="loginScreen" class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div class="glass p-8 max-w-md w-full rounded-3xl">
+            <div class="text-center mb-8">
+                <div class="w-20 h-20 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto text-3xl text-white shadow-lg">
+                    <i class="fas fa-wallet"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-dark mt-4">Global Wallet</h1>
+                <p class="text-dark-light text-sm">محفظتك الإلكترونية الآمنة</p>
+            </div>
+            
+            <form id="loginForm">
+                <div class="mb-4">
+                    <label class="block text-sm font-bold text-dark mb-2">البريد الإلكتروني</label>
+                    <input type="email" id="loginEmail" placeholder="example@email.com" class="w-full p-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none bg-white/60" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-bold text-dark mb-2">كلمة المرور</label>
+                    <input type="password" id="loginPassword" placeholder="••••••••" class="w-full p-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none bg-white/60" required>
+                </div>
+                <div class="flex items-center justify-between mb-6 text-sm">
+                    <label class="flex items-center gap-2 text-dark-light">
+                        <input type="checkbox" id="rememberMe"> تذكرني
+                    </label>
+                    <button type="button" onclick="forgotPassword()" class="text-blue-600 font-bold hover:underline">نسيت كلمة المرور؟</button>
+                </div>
+                <button type="submit" class="btn-primary w-full py-3">
+                    <i class="fas fa-sign-in-alt ml-2"></i> تسجيل الدخول
+                </button>
+                <p class="text-center mt-4 text-dark-light text-sm">
+                    ليس لديك حساب؟ <a href="#" onclick="showRegister()" class="text-blue-600 font-bold">إنشاء حساب جديد</a>
+                </p>
+            </form>
+            
+            <form id="registerForm" style="display:none;">
+                <div class="mb-3">
+                    <label class="block text-sm font-bold text-dark mb-2">الاسم الكامل</label>
+                    <input type="text" id="regName" placeholder="أحمد محمد" class="w-full p-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none bg-white/60" required>
+                </div>
+                <div class="mb-3">
+                    <label class="block text-sm font-bold text-dark mb-2">البريد الإلكتروني</label>
+                    <input type="email" id="regEmail" placeholder="example@email.com" class="w-full p-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none bg-white/60" required>
+                </div>
+                <div class="mb-3">
+                    <label class="block text-sm font-bold text-dark mb-2">رقم الهاتف</label>
+                    <input type="tel" id="regPhone" placeholder="+966 50 000 0000" class="w-full p-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none bg-white/60" required>
+                </div>
+                <div class="mb-3">
+                    <label class="block text-sm font-bold text-dark mb-2">كلمة المرور</label>
+                    <input type="password" id="regPassword" placeholder="••••••••" class="w-full p-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none bg-white/60" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-bold text-dark mb-2">تأكيد كلمة المرور</label>
+                    <input type="password" id="regConfirm" placeholder="••••••••" class="w-full p-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none bg-white/60" required>
+                </div>
+                <button type="submit" class="btn-primary w-full py-3">
+                    <i class="fas fa-user-plus ml-2"></i> إنشاء الحساب
+                </button>
+                <p class="text-center mt-4 text-dark-light text-sm">
+                    لديك حساب؟ <a href="#" onclick="showLogin()" class="text-blue-600 font-bold">تسجيل الدخول</a>
+                </p>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===== التطبيق الرئيسي ===== -->
+    <div id="mainApp" class="hidden pb-32 max-w-md mx-auto">
+
+        <!-- ===== الهيدر ===== -->
+        <div class="bg-gradient-to-r from-blue-600 to-indigo-600 p-4 rounded-b-3xl shadow-lg">
+            <div class="flex justify-between items-center">
+                <button id="menuBtn" class="text-white text-2xl"><i class="fas fa-bars"></i></button>
+                <h1 class="text-white font-bold text-xl">Global Wallet</h1>
+                <button onclick="toggleTheme()" class="text-white text-xl"><i class="fas fa-moon"></i></button>
+            </div>
+        </div>
+
+        <!-- ===== المحتوى ===== -->
+        <div class="p-4">
+
+            <!-- ===== الصفحة الرئيسية ===== -->
+            <div id="page-home" class="page active">
+                <!-- البطاقة البنكية -->
+                <div class="bank-card mb-4">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-xs opacity-80">الرصيد المتاح</p>
+                            <p class="text-2xl font-bold"><span id="balanceDisplay">0</span> <span class="text-sm opacity-80">ج.س</span></p>
+                        </div>
+                        <div class="card-chip"><i class="fas fa-microchip"></i></div>
+                    </div>
+                    <div class="card-number mt-2" id="cardNumberDisplay">•••• •••• •••• 4242</div>
+                    <div class="flex justify-between items-end mt-2">
+                        <div>
+                            <p class="text-xs opacity-80">حامل البطاقة</p>
+                            <p class="text-sm font-bold" id="cardHolderName">أحمد محمد</p>
+                        </div>
+                        <div>
+                            <p class="text-xs opacity-80">تاريخ الانتهاء</p>
+                            <p class="text-sm font-bold" id="cardExpiry">12/26</p>
+                        </div>
+                    </div>
+                    <div class="mt-3 flex gap-2">
+                        <span class="bg-white/20 px-2 py-1 rounded text-xs" id="walletID">#000000</span>
+                        <span class="bg-green-500/30 px-2 py-1 rounded text-xs" id="kycStatus">غير موثق</span>
+                    </div>
+                </div>
+
+                <!-- الإحصائيات السريعة -->
+                <div class="grid grid-cols-3 gap-3 mb-4">
+                    <div class="glass p-3 text-center rounded-xl">
+                        <p class="text-xs text-dark-light">العمليات</p>
+                        <p class="text-lg font-bold text-dark" id="totalTransactions">0</p>
+                    </div>
+                    <div class="glass p-3 text-center rounded-xl">
+                        <p class="text-xs text-dark-light">المستخدم اليومي</p>
+                        <p class="text-lg font-bold text-dark" id="dailyUsed">0</p>
+                    </div>
+                    <div class="glass p-3 text-center rounded-xl">
+                        <p class="text-xs text-dark-light">الحد الشهري</p>
+                        <p class="text-lg font-bold text-dark" id="monthlyLimit">0</p>
+                    </div>
+                </div>
+
+                <!-- الأزرار السريعة -->
+                <div class="grid grid-cols-4 gap-3 mb-4">
+                    <button onclick="showTransfer()" class="glass-card p-3 text-center">
+                        <i class="fas fa-paper-plane text-blue-600 text-xl"></i>
+                        <p class="text-xs text-dark font-bold mt-1">تحويل</p>
+                    </button>
+                    <button onclick="showDeposit()" class="glass-card p-3 text-center">
+                        <i class="fas fa-arrow-down text-green-600 text-xl"></i>
+                        <p class="text-xs text-dark font-bold mt-1">إيداع</p>
+                    </button>
+                    <button onclick="showWithdraw()" class="glass-card p-3 text-center">
+                        <i class="fas fa-arrow-up text-red-600 text-xl"></i>
+                        <p class="text-xs text-dark font-bold mt-1">سحب</p>
+                    </button>
+                    <button onclick="showQR()" class="glass-card p-3 text-center">
+                        <i class="fas fa-qrcode text-purple-600 text-xl"></i>
+                        <p class="text-xs text-dark font-bold mt-1">QR</p>
+                    </button>
+                </div>
+
+                <!-- آخر العمليات -->
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="font-bold text-dark">آخر العمليات</h3>
+                    <button onclick="showTransactions()" class="text-blue-600 text-sm font-bold">عرض الكل</button>
+                </div>
+                <div id="recentTransactions">
+                    <div class="text-center text-dark-light py-8">لا توجد عمليات بعد</div>
+                </div>
+            </div>
+
+            <!-- ===== صفحة التحويل ===== -->
+            <div id="page-transfer" class="page">
+                <div class="flex items-center gap-3 mb-4">
+                    <button onclick="showPage('home')" class="text-dark text-xl"><i class="fas fa-arrow-right"></i></button>
+                    <h2 class="text-xl font-bold text-dark">تحويل الأموال</h2>
+                </div>
+                <div class="glass p-4 rounded-xl">
+                    <div class="mb-3">
+                        <label class="block text-sm font-bold text-dark mb-1">رقم المحفظة المستلم</label>
+                        <input type="text" id="transferWallet" placeholder="أدخل رقم المحفظة" class="w-full p-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none bg-white/60">
+                    </div>
+                    <div class="mb-3">
+                        <label class="block text-sm font-bold text-dark mb-1">المبلغ</label>
+                        <input type="number" id="transferAmount" placeholder="0.00" class="w-full p-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none bg-white/60">
+                    </div>
+                    <div class="mb-3">
+                        <label class="block text-sm font-bold text-dark mb-1">الوصف (اختياري)</label>
+                        <input type="text" id="transferDesc" placeholder="سبب التحويل" class="w-full p-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none bg-white/60">
+                    </div>
+                    <button onclick="processTransfer()" class="btn-primary w-full py-3">
+                        <i class="fas fa-paper-plane ml-2"></i> تأكيد التحويل
+                    </button>
+                </div>
+            </div>
+
+            <!-- ===== صفحة العمليات ===== -->
+            <div id="page-transactions" class="page">
+                <div class="flex items-center gap-3 mb-4">
+                    <button onclick="showPage('home')" class="text-dark text-xl"><i class="fas fa-arrow-right"></i></button>
+                    <h2 class="text-xl font-bold text-dark">جميع العمليات</h2>
+                </div>
+                <div id="allTransactions">
+                    <div class="text-center text-dark-light py-8">لا توجد عمليات بعد</div>
+                </div>
+            </div>
+
+            <!-- ===== صفحة البطاقات ===== -->
+            <div id="page-cards" class="page">
+                <div class="flex items-center gap-3 mb-4">
+                    <button onclick="showPage('home')" class="text-dark text-xl"><i class="fas fa-arrow-right"></i></button>
+                    <h2 class="text-xl font-bold text-dark">بطاقاتي</h2>
+                    <button onclick="showCreateCard()" class="btn-primary text-sm py-1 px-3 mr-auto">+ إضافة</button>
+                </div>
+                <div id="cardsList">
+                    <div class="text-center text-dark-light py-8">لا توجد بطاقات</div>
+                </div>
+            </div>
+
+            <!-- ===== صفحة KYC ===== -->
+            <div id="page-kyc" class="page">
+                <div class="flex items-center gap-3 mb-4">
+                    <button onclick="showPage('home')" class="text-dark text-xl"><i class="fas fa-arrow-right"></i></button>
+                    <h2 class="text-xl font-bold text-dark">التحقق من الهوية</h2>
+                </div>
+                <div class="glass p-4 rounded-xl">
+                    <div class="mb-3">
+                        <label class="block text-sm font-bold text-dark mb-1">نوع الهوية</label>
+                        <select id="kycType" class="w-full p-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none bg-white/60">
+                            <option value="passport">جواز السفر</option>
+                            <option value="national_id">الهوية الوطنية</option>
+                            <option value="driving_license">رخصة القيادة</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="block text-sm font-bold text-dark mb-1">رقم الهوية</label>
+                        <input type="text" id="kycNumber" placeholder="أدخل رقم الهوية" class="w-full p-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none bg-white/60">
+                    </div>
+                    <div class="mb-3">
+                        <label class="block text-sm font-bold text-dark mb-1">تاريخ الميلاد</label>
+                        <input type="date" id="kycDob" class="w-full p-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none bg-white/60">
+                    </div>
+                    <div class="mb-3">
+                        <label class="block text-sm font-bold text-dark mb-1">الدولة</label>
+                        <input type="text" id="kycCountry" placeholder="الدولة" class="w-full p-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none bg-white/60">
+                    </div>
+                    <button onclick="submitKYC()" class="btn-primary w-full py-3">
+                        <i class="fas fa-id-card ml-2"></i> تقديم طلب التحقق
+                    </button>
+                </div>
+            </div>
+
+            <!-- ===== صفحة الإعدادات ===== -->
+            <div id="page-settings" class="page">
+                <div class="flex items-center gap-3 mb-4">
+                    <button onclick="showPage('home')" class="text-dark text-xl"><i class="fas fa-arrow-right"></i></button>
+                    <h2 class="text-xl font-bold text-dark">الإعدادات</h2>
+                </div>
+                <div class="glass p-4 rounded-xl space-y-3">
+                    <button onclick="changePassword()" class="w-full flex items-center gap-3 p-3 hover:bg-blue-50 rounded-xl transition">
+                        <i class="fas fa-key text-blue-600 w-6"></i>
+                        <span class="flex-1 text-right text-dark">تغيير كلمة المرور</span>
+                        <i class="fas fa-chevron-left text-dark-light"></i>
+                    </button>
+                    <button onclick="showDevices()" class="w-full flex items-center gap-3 p-3 hover:bg-blue-50 rounded-xl transition">
+                        <i class="fas fa-mobile-alt text-blue-600 w-6"></i>
+                        <span class="flex-1 text-right text-dark">الأجهزة المتصلة</span>
+                        <i class="fas fa-chevron-left text-dark-light"></i>
+                    </button>
+                    <button onclick="toggle2FA()" class="w-full flex items-center gap-3 p-3 hover:bg-blue-50 rounded-xl transition">
+                        <i class="fas fa-shield-alt text-blue-600 w-6"></i>
+                        <span class="flex-1 text-right text-dark">المصادقة الثنائية</span>
+                        <span id="twoFAStatus" class="text-sm text-red-500">غير مفعلة</span>
+                    </button>
+                    <button onclick="toggleTheme()" class="w-full flex items-center gap-3 p-3 hover:bg-blue-50 rounded-xl transition">
+                        <i class="fas fa-moon text-blue-600 w-6"></i>
+                        <span class="flex-1 text-right text-dark">الوضع الليلي</span>
+                        <i class="fas fa-chevron-left text-dark-light"></i>
+                    </button>
+                    <button onclick="logout()" class="w-full flex items-center gap-3 p-3 hover:bg-red-50 rounded-xl transition text-red-600">
+                        <i class="fas fa-sign-out-alt w-6"></i>
+                        <span class="flex-1 text-right">تسجيل الخروج</span>
+                        <i class="fas fa-chevron-left text-red-300"></i>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ===== التنقل السفلي ===== -->
+        <div class="bottom-nav">
+            <button class="nav-item active" data-page="home" onclick="showPage('home')">
+                <i class="fas fa-home"></i>
+                <span>الرئيسية</span>
+            </button>
+            <button class="nav-item" data-page="transfer" onclick="showPage('transfer')">
+                <i class="fas fa-exchange-alt"></i>
+                <span>تحويل</span>
+            </button>
+            <button class="nav-item" data-page="transactions" onclick="showTransactions()">
+                <i class="fas fa-list-ul"></i>
+                <span>العمليات</span>
+            </button>
+            <button class="nav-item" data-page="cards" onclick="showPage('cards')">
+                <i class="fas fa-credit-card"></i>
+                <span>البطاقات</span>
+            </button>
+            <button class="nav-item" data-page="settings" onclick="showPage('settings')">
+                <i class="fas fa-cog"></i>
+                <span>الإعدادات</span>
+            </button>
+        </div>
+
+        <!-- ===== الشريط الجانبي ===== -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+        <div class="sidebar" id="sidebar">
+            <div class="text-center py-4 border-b border-gray-200">
+                <img id="profileImg" class="w-20 h-20 rounded-full mx-auto border-2 border-blue-500" src="https://via.placeholder.com/100">
+                <h4 id="profileName" class="font-bold text-dark text-lg mt-2"></h4>
+                <p id="profileWallet" class="text-sm text-blue-600"></p>
+                <p id="profileBalance" class="text-sm text-dark-light"></p>
+            </div>
+            <button onclick="showPage('home');closeSidebar()" class="w-full flex items-center gap-3 p-3 hover:bg-blue-50 rounded-xl text-dark">
+                <i class="fas fa-home w-6 text-blue-600"></i> الرئيسية
+            </button>
+            <button onclick="showPage('transfer');closeSidebar()" class="w-full flex items-center gap-3 p-3 hover:bg-blue-50 rounded-xl text-dark">
+                <i class="fas fa-exchange-alt w-6 text-blue-600"></i> تحويل
+            </button>
+            <button onclick="showTransactions();closeSidebar()" class="w-full flex items-center gap-3 p-3 hover:bg-blue-50 rounded-xl text-dark">
+                <i class="fas fa-list-ul w-6 text-blue-600"></i> العمليات
+            </button>
+            <button onclick="showPage('cards');closeSidebar()" class="w-full flex items-center gap-3 p-3 hover:bg-blue-50 rounded-xl text-dark">
+                <i class="fas fa-credit-card w-6 text-blue-600"></i> البطاقات
+            </button>
+            <button onclick="showPage('kyc');closeSidebar()" class="w-full flex items-center gap-3 p-3 hover:bg-blue-50 rounded-xl text-dark">
+                <i class="fas fa-id-card w-6 text-blue-600"></i> التحقق (KYC)
+            </button>
+            <button onclick="showPage('settings');closeSidebar()" class="w-full flex items-center gap-3 p-3 hover:bg-blue-50 rounded-xl text-dark">
+                <i class="fas fa-cog w-6 text-blue-600"></i> الإعدادات
+            </button>
+            <div class="border-t border-gray-200 mt-4 pt-4">
+                <button onclick="logout();closeSidebar()" class="w-full flex items-center gap-3 p-3 hover:bg-red-50 rounded-xl text-red-600">
+                    <i class="fas fa-sign-out-alt w-6"></i> تسجيل الخروج
+                </button>
+            </div>
+        </div>
+
+        <!-- ===== مودالات ===== -->
+        <div id="modal" class="modal-overlay">
+            <div class="modal-box">
+                <div id="modalContent"></div>
+            </div>
+        </div>
+
+        <!-- ===== توست ===== -->
+        <div id="toast" class="toast"></div>
+
+    </div>
+
+    <!-- ============================================= -->
+    <!-- ===== JAVASCRIPT ===== -->
+    <!-- ============================================= -->
+    <script type="importmap">
+    {
+        "imports": {
+            "firebase/app": "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js",
+            "firebase/firestore": "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js",
+            "firebase/auth": "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"
+        }
+    }
+    </script>
+
+    <script type="module">
+        // =============================================
+        // ===== FIREBASE CONFIG =====
+        // =============================================
+        import { initializeApp } from "firebase/app";
+        import { getFirestore, doc, onSnapshot, collection, query, where, getDocs, updateDoc, increment, setDoc, serverTimestamp, getDoc, runTransaction, deleteDoc, orderBy, addDoc, writeBatch } from "firebase/firestore";
+        import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, sendPasswordResetEmail, updatePassword } from "firebase/auth";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC0jzecEwKgHpxHpTi8Y-_bwwfzVdtgf3E",
+            authDomain: "khasmshop.firebaseapp.com",
+            projectId: "khasmshop",
+            storageBucket: "khasmshop.firebasestorage.app",
+            messagingSenderId: "238182001615",
+            appId: "1:238182001615:web:d77391030a40a481b440ba"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        // =============================================
+        // ===== STATE =====
+        // =============================================
+        let currentUser = null;
+        let userData = null;
+        let transactions = [];
+        let cards = [];
+
+        // =============================================
+        // ===== DOM REFERENCES =====
+        // =============================================
+        const loadingScreen = document.getElementById('loadingScreen');
+        const loginScreen = document.getElementById('loginScreen');
+        const mainApp = document.getElementById('mainApp');
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
+        const toast = document.getElementById('toast');
+        const modal = document.getElementById('modal');
+
+        // =============================================
+        // ===== TOAST =====
+        // =============================================
+        function showToast(msg, type = 'info') {
+            toast.textContent = msg;
+            toast.style.background = type === 'error' ? '#EF4444' : type === 'success' ? '#16A34A' : '#1e293b';
+            toast.classList.add('show');
+            clearTimeout(toast._timeout);
+            toast._timeout = setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+        window.showToast = showToast;
+
+        // =============================================
+        // ===== MODAL =====
+        // =============================================
+        function openModal(html) {
+            document.getElementById('modalContent').innerHTML = html;
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+        window.closeModal = closeModal;
+
+        // =============================================
+        // ===== SIDEBAR =====
+        // =============================================
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+            document.getElementById('sidebarOverlay').classList.toggle('active');
+        }
+        window.toggleSidebar = toggleSidebar;
+
+        function closeSidebar() {
+            document.getElementById('sidebar').classList.remove('open');
+            document.getElementById('sidebarOverlay').classList.remove('active');
+        }
+        window.closeSidebar = closeSidebar;
+
+        document.getElementById('menuBtn').addEventListener('click', toggleSidebar);
+        document.getElementById('sidebarOverlay').addEventListener('click', closeSidebar);
+
+        // =============================================
+        // ===== NAVIGATION =====
+        // =============================================
+        function showPage(page) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            const target = document.getElementById(`page-${page}`);
+            if (target) target.classList.add('active');
+
+            document.querySelectorAll('.bottom-nav .nav-item').forEach(n => n.classList.remove('active'));
+            const navBtn = document.querySelector(`.bottom-nav .nav-item[data-page="${page}"]`);
+            if (navBtn) navBtn.classList.add('active');
+
+            if (page === 'transactions') loadAllTransactions();
+            if (page === 'cards') loadCards();
+        }
+        window.showPage = showPage;
+
+        // =============================================
+        // ===== AUTH =====
+        // =============================================
+        function showLogin() {
+            loginForm.style.display = 'block';
+            registerForm.style.display = 'none';
+        }
+        window.showLogin = showLogin;
+
+        function showRegister() {
+            loginForm.style.display = 'none';
+            registerForm.style.display = 'block';
+        }
+        window.showRegister = showRegister;
+
+        // تسجيل الدخول
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            const btn = loginForm.querySelector('button[type="submit"]');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin ml-2"></i> جاري تسجيل الدخول...';
+            btn.disabled = true;
+
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                showToast('✅ تم تسجيل الدخول بنجاح!', 'success');
+            } catch (error) {
+                let msg = '❌ خطأ في تسجيل الدخول';
+                if (error.code === 'auth/user-not-found') msg = '❌ هذا البريد غير مسجل';
+                else if (error.code === 'auth/wrong-password') msg = '❌ كلمة المرور غير صحيحة';
+                else if (error.code === 'auth/invalid-email') msg = '❌ البريد الإلكتروني غير صحيح';
+                showToast(msg, 'error');
+            } finally {
+                btn.innerHTML = '<i class="fas fa-sign-in-alt ml-2"></i> تسجيل الدخول';
+                btn.disabled = false;
+            }
+        });
+
+        // إنشاء حساب
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('regName').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const phone = document.getElementById('regPhone').value.trim();
+            const password = document.getElementById('regPassword').value;
+            const confirm = document.getElementById('regConfirm').value;
+
+            if (password !== confirm) {
+                showToast('❌ كلمتا المرور غير متطابقتين', 'error');
+                return;
+            }
+            if (password.length < 6) {
+                showToast('❌ كلمة المرور يجب أن تكون 6 أحرف على الأقل', 'error');
+                return;
+            }
+
+            const btn = registerForm.querySelector('button[type="submit"]');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin ml-2"></i> جاري إنشاء الحساب...';
+            btn.disabled = true;
+
+            try {
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
+                const walletID = Math.floor(100000 + Math.random() * 900000).toString();
+
+                await setDoc(doc(db, "users", user.uid), {
+                    name: name,
+                    email: email,
+                    phone: phone,
+                    walletID: walletID,
+                    balance: 100000, // رصيد تجريبي
+                    frozenBalance: 0,
+                    currency: 'SDG',
+                    isVerified: false,
+                    kycStatus: 'pending',
+                    dailyLimit: 100000,
+                    monthlyLimit: 1000000,
+                    dailyUsed: 0,
+                    monthlyUsed: 0,
+                    createdAt: serverTimestamp(),
+                    lastLogin: serverTimestamp()
+                });
+
+                showToast(`✅ تم إنشاء الحساب بنجاح! #${walletID}`, 'success');
+            } catch (error) {
+                let msg = '❌ خطأ في إنشاء الحساب';
+                if (error.code === 'auth/email-already-in-use') msg = '❌ هذا البريد مستخدم بالفعل';
+                else if (error.code === 'auth/invalid-email') msg = '❌ البريد الإلكتروني غير صحيح';
+                showToast(msg, 'error');
+            } finally {
+                btn.innerHTML = '<i class="fas fa-user-plus ml-2"></i> إنشاء الحساب';
+                btn.disabled = false;
+            }
+        });
+
+        // نسيان كلمة المرور
+        window.forgotPassword = async () => {
+            const email = prompt('📧 أدخل بريدك الإلكتروني:');
+            if (!email) return;
+            try {
+                await sendPasswordResetEmail(auth, email);
+                showToast('✅ تم إرسال رابط إعادة التعيين إلى بريدك', 'success');
+            } catch (error) {
+                showToast('❌ خطأ: ' + error.message, 'error');
+            }
+        };
+
+        // تغيير كلمة المرور
+        window.changePassword = async () => {
+            if (!auth.currentUser) {
+                showToast('❌ يرجى تسجيل الدخول أولاً', 'error');
+                return;
+            }
+            const newPassword = prompt('🔑 أدخل كلمة المرور الجديدة (6 أحرف على الأقل):');
+            if (!newPassword || newPassword.length < 6) {
+                showToast('❌ كلمة المرور يجب أن تكون 6 أحرف على الأقل', 'error');
+                return;
+            }
+            try {
+                await updatePassword(auth.currentUser, newPassword);
+                showToast('✅ تم تغيير كلمة المرور بنجاح', 'success');
+            } catch (error) {
+                showToast('❌ خطأ: ' + error.message, 'error');
+            }
+        };
+
+        // تسجيل الخروج
+        window.logout = async () => {
+            if (confirm('⚠️ هل أنت متأكد من تسجيل الخروج؟')) {
+                await signOut(auth);
+                location.reload();
+            }
+        };
+
+        // =============================================
+        // ===== USER DATA =====
+        // =============================================
+        function updateUI(data) {
+            userData = data;
+            document.getElementById('balanceDisplay').innerText = (data.balance || 0).toLocaleString();
+            document.getElementById('walletID').innerText = `#${data.walletID || '000000'}`;
+            document.getElementById('cardHolderName').innerText = data.name || 'مستخدم';
+            document.getElementById('cardNumberDisplay').innerText = `•••• •••• •••• ${data.walletID ? data.walletID.slice(-4) : '4242'}`;
+            document.getElementById('cardExpiry').innerText = '12/26';
+            document.getElementById('kycStatus').innerText = data.isVerified ? '✅ موثق' : '⚠️ غير موثق';
+            document.getElementById('kycStatus').style.background = data.isVerified ? 'rgba(22,163,74,0.3)' : 'rgba(239,68,68,0.3)';
+            document.getElementById('dailyUsed').innerText = (data.dailyUsed || 0).toLocaleString();
+            document.getElementById('monthlyLimit').innerText = (data.monthlyLimit || 0).toLocaleString();
+
+            // تحديث الملف الشخصي
+            document.getElementById('profileName').innerText = data.name || 'مستخدم';
+            document.getElementById('profileWallet').innerText = `#${data.walletID || '000000'}`;
+            document.getElementById('profileBalance').innerText = `${(data.balance || 0).toLocaleString()} ج.س`;
+            document.getElementById('profileImg').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(data.name || 'U')}&size=100&background=1A73E8&color=fff&bold=true`;
+
+            // تحديث حالة المصادقة الثنائية
+            document.getElementById('twoFAStatus').innerText = data.twoFactorEnabled ? '✅ مفعلة' : '❌ غير مفعلة';
+            document.getElementById('twoFAStatus').style.color = data.twoFactorEnabled ? '#16A34A' : '#EF4444';
+        }
+
+        // =============================================
+        // ===== WALLET FUNCTIONS =====
+        // =============================================
+
+        // تحويل أموال
+        window.processTransfer = async () => {
+            if (!auth.currentUser) {
+                showToast('❌ يرجى تسجيل الدخول أولاً', 'error');
+                return;
+            }
+
+            const receiverWallet = document.getElementById('transferWallet').value.trim();
+            const amount = parseFloat(document.getElementById('transferAmount').value);
+            const description = document.getElementById('transferDesc').value.trim() || 'تحويل';
+
+            if (!receiverWallet) {
+                showToast('❌ أدخل رقم المحفظة', 'error');
+                return;
+            }
+            if (!amount || amount <= 0) {
+                showToast('❌ المبلغ غير صحيح', 'error');
+                return;
+            }
+            if (amount > (userData?.balance || 0)) {
+                showToast('❌ الرصيد غير كافي', 'error');
+                return;
+            }
+
+            if (!confirm(`تأكيد تحويل ${amount.toLocaleString()} ج.س إلى المحفظة #${receiverWallet}`)) return;
+
+            try {
+                const result = await runTransaction(db, async (transaction) => {
+                    // 1. التحقق من المرسل
+                    const senderRef = doc(db, "users", auth.currentUser.uid);
+                    const senderDoc = await transaction.get(senderRef);
+                    if (!senderDoc.exists) throw new Error('المرسل غير موجود');
+                    const senderData = senderDoc.data();
+                    if (senderData.balance < amount) throw new Error('الرصيد غير كافي');
+
+                    // 2. البحث عن المستلم
+                    const receiverQuery = await getDocs(query(collection(db, "users"), where("walletID", "==", receiverWallet)));
+                    if (receiverQuery.empty) throw new Error('رقم المحفظة غير صحيح');
+                    const receiverRef = receiverQuery.docs[0].ref;
+                    const receiverDoc = await transaction.get(receiverRef);
+                    const receiverData = receiverDoc.data();
+
+                    // 3. خصم من المرسل
+                    const senderNewBalance = senderData.balance - amount;
+                    transaction.update(senderRef, {
+                        balance: senderNewBalance,
+                        dailyUsed: increment(amount),
+                        monthlyUsed: increment(amount),
+                        updatedAt: serverTimestamp()
+                    });
+
+                    // 4. إضافة للمستلم
+                    const receiverNewBalance = (receiverData.balance || 0) + amount;
+                    transaction.update(receiverRef, {
+                        balance: receiverNewBalance,
+                        updatedAt: serverTimestamp()
+                    });
+
+                    // 5. إنشاء عملية
+                    const txnRef = doc(collection(db, "transactions"));
+                    const txnData = {
+                        id: txnRef.id,
+                        reference: `TXN-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
+                        senderId: auth.currentUser.uid,
+                        senderWalletID: senderData.walletID,
+                        receiverId: receiverQuery.docs[0].id,
+                        receiverWalletID: receiverWallet,
+                        amount: amount,
+                        fee: 0,
+                        netAmount: amount,
+                        currency: 'SDG',
+                        type: 'transfer',
+                        status: 'completed',
+                        description: description,
+                        createdAt: serverTimestamp(),
+                        completedAt: serverTimestamp()
+                    };
+                    transaction.set(txnRef, txnData);
+
+                    // 6. سجل الدفتر للمرسل
+                    const ledgerSender = doc(collection(db, "ledger"));
+                    transaction.set(ledgerSender, {
+                        userId: auth.currentUser.uid,
+                        transactionId: txnRef.id,
+                        walletId: senderData.walletID,
+                        amount: amount,
+                        balanceBefore: senderData.balance,
+                        balanceAfter: senderNewBalance,
+                        type: 'debit',
+                        description: `تحويل إلى #${receiverWallet}`,
+                        createdAt: serverTimestamp()
+                    });
+
+                    // 7. سجل الدفتر للمستلم
+                    const ledgerReceiver = doc(collection(db, "ledger"));
+                    transaction.set(ledgerReceiver, {
+                        userId: receiverQuery.docs[0].id,
+                        transactionId: txnRef.id,
+                        walletId: receiverWallet,
+                        amount: amount,
+                        balanceBefore: receiverData.balance || 0,
+                        balanceAfter: receiverNewBalance,
+                        type: 'credit',
+                        description: `استلام من #${senderData.walletID}`,
+                        createdAt: serverTimestamp()
+                    });
+
+                    return { success: true, senderNewBalance, txnId: txnRef.id };
+                });
+
+                if (result.success) {
+                    showToast(`✅ تم تحويل ${amount.toLocaleString()} ج.س بنجاح`, 'success');
+                    document.getElementById('transferWallet').value = '';
+                    document.getElementById('transferAmount').value = '';
+                    document.getElementById('transferDesc').value = '';
+                    // تحديث الرصيد
+                    if (userData) {
+                        userData.balance = result.senderNewBalance;
+                        document.getElementById('balanceDisplay').innerText = result.senderNewBalance.toLocaleString();
+                        document.getElementById('profileBalance').innerText = `${result.senderNewBalance.toLocaleString()} ج.س`;
+                    }
+                    loadRecentTransactions();
+                }
+            } catch (error) {
+                showToast('❌ ' + error.message, 'error');
+            }
+        };
+
+        // ===== إيداع =====
+        window.showDeposit = () => {
+            openModal(`
+                <h2 class="text-xl font-bold text-dark mb-4 text-center">💰 إيداع الأموال</h2>
+                <p class="text-dark-light text-sm text-center mb-4">للإيداع، يرجى التواصل مع الدعم الفني</p>
+                <div class="bg-blue-50 p-4 rounded-xl text-center mb-4">
+                    <p class="text-dark font-bold">رقم المحفظة</p>
+                    <p class="text-2xl font-bold text-blue-600">${userData?.walletID || '000000'}</p>
+                </div>
+                <button onclick="window.open('https://wa.me/2490991305468?text=مرحباً%20أريد%20إيداع%20في%20محفظتي%20رقم%20${userData?.walletID || '000000'}', '_blank')" class="btn-primary w-full py-3">
+                    <i class="fab fa-whatsapp ml-2"></i> التواصل للدفع
+                </button>
+                <button onclick="closeModal()" class="w-full py-2 mt-2 text-dark-light hover:text-dark">إلغاء</button>
+            `);
+        };
+
+        // ===== سحب =====
+        window.showWithdraw = () => {
+            openModal(`
+                <h2 class="text-xl font-bold text-dark mb-4 text-center">💰 سحب الأموال</h2>
+                <p class="text-dark-light text-sm text-center mb-4">أدخل المبلغ المراد سحبه</p>
+                <div class="mb-3">
+                    <label class="block text-sm font-bold text-dark mb-1">المبلغ</label>
+                    <input type="number" id="withdrawAmount" placeholder="0.00" class="w-full p-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none bg-white/60">
+                </div>
+                <div class="mb-3">
+                    <label class="block text-sm font-bold text-dark mb-1">طريقة السحب</label>
+                    <select id="withdrawMethod" class="w-full p-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none bg-white/60">
+                        <option value="bank">تحويل بنكي</option>
+                        <option value="card">بطاقة فيزا</option>
+                        <option value="crypto">عملة رقمية</option>
+                    </select>
+                </div>
+                <button onclick="processWithdraw()" class="btn-primary w-full py-3">
+                    <i class="fas fa-arrow-up ml-2"></i> تأكيد السحب
+                </button>
+                <button onclick="closeModal()" class="w-full py-2 mt-2 text-dark-light hover:text-dark">إلغاء</button>
+            `);
+        };
+
+        window.processWithdraw = async () => {
+            const amount = parseFloat(document.getElementById('withdrawAmount').value);
+            if (!amount || amount <= 0) {
+                showToast('❌ المبلغ غير صحيح', 'error');
+                return;
+            }
+            if (amount > (userData?.balance || 0)) {
+                showToast('❌ الرصيد غير كافي', 'error');
+                return;
+            }
+            closeModal();
+            showToast('📩 تم إرسال طلب السحب، سيتم معالجته خلال 24 ساعة', 'success');
+        };
+
+        // ===== QR =====
+        window.showQR = () => {
+            const wallet = userData?.walletID || '000000';
+            openModal(`
+                <h2 class="text-xl font-bold text-dark mb-4 text-center">📱 رمز QR للمحفظة</h2>
+                <div class="text-center">
+                    <div class="bg-white p-4 rounded-xl inline-block mx-auto mb-4">
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${wallet}" alt="QR Code" class="w-48 h-48 mx-auto">
+                    </div>
+                    <p class="text-dark font-bold">#${wallet}</p>
+                    <p class="text-dark-light text-sm">امسح الرمز للتحويل مباشرة</p>
+                </div>
+                <button onclick="closeModal()" class="w-full py-2 mt-4 text-dark-light hover:text-dark">إغلاق</button>
+            `);
+        };
+
+        // =============================================
+        // ===== TRANSACTIONS =====
+        // =============================================
+        async function loadRecentTransactions() {
+            if (!auth.currentUser) return;
+            const container = document.getElementById('recentTransactions');
+            try {
+                const q = query(collection(db, "transactions"),
+                    where("senderId", "==", auth.currentUser.uid),
+                    orderBy("createdAt", "desc"),
+                    limit(5)
+                );
+                const snap = await getDocs(q);
+                if (snap.empty) {
+                    container.innerHTML = '<div class="text-center text-dark-light py-8">لا توجد عمليات حديثة</div>';
+                    return;
+                }
+                let html = '';
+                snap.forEach(doc => {
+                    const t = doc.data();
+                    const isCredit = t.type === 'deposit' || t.receiverId === auth.currentUser.uid;
+                    html += `
+                        <div class="transaction-item" onclick="showTransactionDetail('${doc.id}')">
+                            <div class="transaction-icon ${isCredit ? 'credit' : 'debit'}">
+                                <i class="fas ${isCredit ? 'fa-arrow-down' : 'fa-arrow-up'}"></i>
+                            </div>
+                            <div class="flex-1">
+                                <p class="font-bold text-dark">${t.description || 'تحويل'}</p>
+                                <p class="text-xs text-dark-light">${new Date(t.createdAt?.seconds * 1000 || Date.now()).toLocaleDateString()}</p>
+                            </div>
+                            <div class="text-left">
+                                <p class="font-bold ${isCredit ? 'text-green-600' : 'text-red-600'}">${isCredit ? '+' : '-'}${t.amount.toLocaleString()} ج.س</p>
+                                <p class="text-xs text-dark-light">${t.status || 'مكتمل'}</p>
+                            </div>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading transactions:', error);
+            }
+        }
+
+        async function loadAllTransactions() {
+            if (!auth.currentUser) return;
+            const container = document.getElementById('allTransactions');
+            try {
+                const q = query(collection(db, "transactions"),
+                    where("senderId", "==", auth.currentUser.uid),
+                    orderBy("createdAt", "desc")
+                );
+                const snap = await getDocs(q);
+                if (snap.empty) {
+                    container.innerHTML = '<div class="text-center text-dark-light py-8">لا توجد عمليات</div>';
+                    return;
+                }
+                let html = '';
+                snap.forEach(doc => {
+                    const t = doc.data();
+                    const isCredit = t.type === 'deposit' || t.receiverId === auth.currentUser.uid;
+                    html += `
+                        <div class="transaction-item" onclick="showTransactionDetail('${doc.id}')">
+                            <div class="transaction-icon ${isCredit ? 'credit' : 'debit'}">
+                                <i class="fas ${isCredit ? 'fa-arrow-down' : 'fa-arrow-up'}"></i>
+                            </div>
+                            <div class="flex-1">
+                                <p class="font-bold text-dark">${t.description || 'تحويل'}</p>
+                                <p class="text-xs text-dark-light">${new Date(t.createdAt?.seconds * 1000 || Date.now()).toLocaleString()}</p>
+                            </div>
+                            <div class="text-left">
+                                <p class="font-bold ${isCredit ? 'text-green-600' : 'text-red-600'}">${isCredit ? '+' : '-'}${t.amount.toLocaleString()} ج.س</p>
+                                <p class="text-xs text-dark-light">${t.status || 'مكتمل'}</p>
+                            </div>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+                document.getElementById('totalTransactions').innerText = snap.size;
+            } catch (error) {
+                console.error('Error loading transactions:', error);
+            }
+        }
+
+        window.showTransactions = () => {
+            showPage('transactions');
+            loadAllTransactions();
+        };
+
+        window.showTransactionDetail = async (txnId) => {
+            try {
+                const docSnap = await getDoc(doc(db, "transactions", txnId));
+                if (!docSnap.exists) {
+                    showToast('❌ العملية غير موجودة', 'error');
+                    return;
+                }
+                const t = docSnap.data();
+                const isCredit = t.type === 'deposit' || t.receiverId === auth.currentUser.uid;
+                openModal(`
+                    <h2 class="text-xl font-bold text-dark mb-4 text-center">📋 تفاصيل العملية</h2>
+                    <div class="space-y-2">
+                        <div class="flex justify-between p-2 border-b border-gray-100">
+                            <span class="text-dark-light">المرجع</span>
+                            <span class="font-bold text-dark">${t.reference || txnId}</span>
+                        </div>
+                        <div class="flex justify-between p-2 border-b border-gray-100">
+                            <span class="text-dark-light">الوصف</span>
+                            <span class="font-bold text-dark">${t.description || 'تحويل'}</span>
+                        </div>
+                        <div class="flex justify-between p-2 border-b border-gray-100">
+                            <span class="text-dark-light">المبلغ</span>
+                            <span class="font-bold ${isCredit ? 'text-green-600' : 'text-red-600'}">${isCredit ? '+' : '-'}${t.amount.toLocaleString()} ج.س</span>
+                        </div>
+                        <div class="flex justify-between p-2 border-b border-gray-100">
+                            <span class="text-dark-light">الرسوم</span>
+                            <span class="font-bold text-dark">${(t.fee || 0).toLocaleString()} ج.س</span>
+                        </div>
+                        <div class="flex justify-between p-2 border-b border-gray-100">
+                            <span class="text-dark-light">الحالة</span>
+                            <span class="font-bold ${t.status === 'completed' ? 'text-green-600' : 'text-yellow-600'}">${t.status || 'مكتمل'}</span>
+                        </div>
+                        <div class="flex justify-between p-2 border-b border-gray-100">
+                            <span class="text-dark-light">التاريخ</span>
+                            <span class="font-bold text-dark">${new Date(t.createdAt?.seconds * 1000 || Date.now()).toLocaleString()}</span>
+                        </div>
+                        <div class="flex justify-between p-2">
+                            <span class="text-dark-light">النوع</span>
+                            <span class="font-bold text-dark">${isCredit ? '📥 وارد' : '📤 صادر'}</span>
+                        </div>
+                    </div>
+                    <button onclick="closeModal()" class="w-full py-2 mt-4 text-dark-light hover:text-dark">إغلاق</button>
+                `);
+            } catch (error) {
+                showToast('❌ خطأ في جلب التفاصيل', 'error');
+            }
+        };
+
+        // =============================================
+        // ===== CARDS =====
+        // =============================================
+        async function loadCards() {
+            if (!auth.currentUser) return;
+            const container = document.getElementById('cardsList');
+            try {
+                const userDoc = await getDoc(doc(db, "users", auth.currentUser.uid));
+                if (!userDoc.exists) return;
+                const data = userDoc.data();
+                cards = data.cards || [];
+
+                if (cards.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center text-dark-light py-8">
+                            <i class="fas fa-credit-card text-4xl mb-3 block"></i>
+                            <p>لا توجد بطاقات</p>
+                            <button onclick="showCreateCard()" class="btn-primary mt-3 text-sm py-2 px-4">+ إضافة بطاقة</button>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = '';
+                cards.forEach(card => {
+                    html += `
+                        <div class="glass p-4 rounded-xl mb-3">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="font-bold text-dark">${card.brand || 'بطاقة'}</p>
+                                    <p class="text-sm text-dark-light">•••• •••• •••• ${card.lastFour || '4242'}</p>
+                                </div>
+                                <div class="flex gap-2">
+                                    <span class="text-xs px-2 py-1 rounded ${card.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">
+                                        ${card.isActive ? 'نشطة' : 'موقفة'}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="flex justify-between mt-2 text-sm">
+                                <span class="text-dark-light">تنتهي: ${card.expiryMonth || 12}/${card.expiryYear || 26}</span>
+                                <div class="flex gap-2">
+                                    <button onclick="toggleCard('${card.id}')" class="text-blue-600 hover:underline">
+                                        ${card.isFrozen ? 'إلغاء التجميد' : 'تجميد'}
+                                    </button>
+                                    <button onclick="deleteCard('${card.id}')" class="text-red-500 hover:underline">حذف</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading cards:', error);
+            }
+        }
+
+        window.showCreateCard = () => {
+            openModal(`
+                <h2 class="text-xl font-bold text-dark mb-4 text-center">💳 إضافة بطاقة جديدة</h2>
+                <div class="mb-3">
+                    <label class="block text-sm font-bold text-dark mb-1">نوع البطاقة</label>
+                    <select id="cardType" class="w-full p-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none bg-white/60">
+                        <option value="virtual">افتراضية</option>
+                        <option value="physical">فيزيائية</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="block text-sm font-bold text-dark mb-1">العلامة التجارية</label>
+                    <select id="cardBrand" class="w-full p-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none bg-white/60">
+                        <option value="visa">Visa</option>
+                        <option value="mastercard">Mastercard</option>
+                        <option value="amex">American Express</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="block text-sm font-bold text-dark mb-1">الحد اليومي</label>
+                    <input type="number" id="cardDailyLimit" value="5000" class="w-full p-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none bg-white/60">
+                </div>
+                <button onclick="createCard()" class="btn-primary w-full py-3">
+                    <i class="fas fa-plus ml-2"></i> إنشاء البطاقة
+                </button>
+                <button onclick="closeModal()" class="w-full py-2 mt-2 text-dark-light hover:text-dark">إلغاء</button>
+            `);
+        };
+
+        window.createCard = async () => {
+            if (!auth.currentUser) return;
+            const type = document.getElementById('cardType').value;
+            const brand = document.getElementById('cardBrand').value;
+            const dailyLimit = parseFloat(document.getElementById('cardDailyLimit').value) || 5000;
+
+            const newCard = {
+                id: `card-${Date.now()}`,
+                type: type,
+                brand: brand,
+                lastFour: Math.floor(1000 + Math.random() * 9000).toString(),
+                expiryMonth: 12,
+                expiryYear: 26,
+                dailyLimit: dailyLimit,
+                monthlyLimit: dailyLimit * 30,
+                dailyUsed: 0,
+                monthlyUsed: 0,
+                isActive: true,
+                isFrozen: false,
+                isDefault: true,
+                createdAt: new Date().toISOString()
+            };
+
+            try {
+                const userRef = doc(db, "users", auth.currentUser.uid);
+                const userDoc = await getDoc(userRef);
+                const data = userDoc.data();
+                const cards = data.cards || [];
+                cards.push(newCard);
+
+                await updateDoc(userRef, { cards: cards, updatedAt: serverTimestamp() });
+                showToast('✅ تم إنشاء البطاقة بنجاح', 'success');
+                closeModal();
+                loadCards();
+            } catch (error) {
+                showToast('❌ خطأ: ' + error.message, 'error');
+            }
+        };
+
+        window.toggleCard = async (cardId) => {
+            if (!auth.currentUser) return;
+            try {
+                const userRef = doc(db, "users", auth.currentUser.uid);
+                const userDoc = await getDoc(userRef);
+                const data = userDoc.data();
+                const cards = data.cards || [];
+                const index = cards.findIndex(c => c.id === cardId);
+                if (index === -1) return;
+                cards[index].isFrozen = !cards[index].isFrozen;
+                await updateDoc(userRef, { cards: cards, updatedAt: serverTimestamp() });
+                showToast(cards[index].isFrozen ? '✅ تم تجميد البطاقة' : '✅ تم إلغاء التجميد', 'success');
+                loadCards();
+            } catch (error) {
+                showToast('❌ خطأ: ' + error.message, 'error');
+            }
+        };
+
+        window.deleteCard = async (cardId) => {
+            if (!confirm('⚠️ هل أنت متأكد من حذف البطاقة؟')) return;
+            if (!auth.currentUser) return;
+            try {
+                const userRef = doc(db, "users", auth.currentUser.uid);
+                const userDoc = await getDoc(userRef);
+                const data = userDoc.data();
+                const cards = data.cards || [];
+                const newCards = cards.filter(c => c.id !== cardId);
+                await updateDoc(userRef, { cards: newCards, updatedAt: serverTimestamp() });
+                showToast('✅ تم حذف البطاقة', 'success');
+                loadCards();
+            } catch (error) {
+                showToast('❌ خطأ: ' + error.message, 'error');
+            }
+        };
+
+        // =============================================
+        // ===== KYC =====
+        // =============================================
+        window.submitKYC = async () => {
+            if (!auth.currentUser) {
+                showToast('❌ يرجى تسجيل الدخول أولاً', 'error');
+                return;
+            }
+
+            const kycData = {
+                idType: document.getElementById('kycType').value,
+                idNumber: document.getElementById('kycNumber').value.trim(),
+                dateOfBirth: document.getElementById('kycDob').value,
+                country: document.getElementById('kycCountry').value.trim()
+            };
+
+            if (!kycData.idNumber || !kycData.dateOfBirth || !kycData.country) {
+                showToast('❌ جميع الحقول مطلوبة', 'error');
+                return;
+            }
+
+            try {
+                const userRef = doc(db, "users", auth.currentUser.uid);
+                await updateDoc(userRef, {
+                    kycStatus: 'pending',
+                    kycData: kycData,
+                    isVerified: false,
+                    updatedAt: serverTimestamp()
+                });
+                showToast('✅ تم إرسال طلب التحقق بنجاح', 'success');
+                document.getElementById('kycStatus').innerText = '⏳ قيد المراجعة';
+                document.getElementById('kycStatus').style.background = 'rgba(245,158,11,0.3)';
+            } catch (error) {
+                showToast('❌ خطأ: ' + error.message, 'error');
+            }
+        };
+
+        // =============================================
+        // ===== 2FA =====
+        // =============================================
+        window.toggle2FA = async () => {
+            if (!auth.currentUser) {
+                showToast('❌ يرجى تسجيل الدخول أولاً', 'error');
+                return;
+            }
+            try {
+                const userRef = doc(db, "users", auth.currentUser.uid);
+                const userDoc = await getDoc(userRef);
+                const data = userDoc.data();
+                const newStatus = !data.twoFactorEnabled;
+                await updateDoc(userRef, { twoFactorEnabled: newStatus });
+                showToast(newStatus ? '✅ تم تفعيل المصادقة الثنائية' : '❌ تم إلغاء المصادقة الثنائية', 'success');
+                if (userData) {
+                    userData.twoFactorEnabled = newStatus;
+                    document.getElementById('twoFAStatus').innerText = newStatus ? '✅ مفعلة' : '❌ غير مفعلة';
+                    document.getElementById('twoFAStatus').style.color = newStatus ? '#16A34A' : '#EF4444';
+                }
+            } catch (error) {
+                showToast('❌ خطأ: ' + error.message, 'error');
+            }
+        };
+
+        // =============================================
+        // ===== THEME =====
+        // =============================================
+        window.toggleTheme = () => {
+            document.documentElement.classList.toggle('dark');
+            const isDark = document.documentElement.classList.contains('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            document.querySelector('#menuBtn + button i').className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+        };
+
+        // استعادة الثيم
+        if (localStorage.getItem('theme') === 'dark') {
+            document.documentElement.classList.add('dark');
+        }
+
+        // =============================================
+        // ===== DEVICES =====
+        // =============================================
+        window.showDevices = () => {
+            openModal(`
+                <h2 class="text-xl font-bold text-dark mb-4 text-center">📱 الأجهزة المتصلة</h2>
+                <div class="space-y-3">
+                    <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                        <i class="fas fa-laptop text-blue-600 text-xl"></i>
+                        <div class="flex-1">
+                            <p class="font-bold text-dark">جهاز الحالي</p>
+                            <p class="text-xs text-dark-light">Chrome على Windows</p>
+                        </div>
+                        <span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">نشط</span>
+                    </div>
+                    <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                        <i class="fas fa-mobile-alt text-blue-600 text-xl"></i>
+                        <div class="flex-1">
+                            <p class="font-bold text-dark">iPhone 14 Pro</p>
+                            <p class="text-xs text-dark-light">آخر استخدام: منذ يومين</p>
+                        </div>
+                        <span class="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded">غير نشط</span>
+                    </div>
+                </div>
+                <button onclick="closeModal()" class="w-full py-2 mt-4 text-dark-light hover:text-dark">إغلاق</button>
+            `);
+        };
+
+        // =============================================
+        // ===== AUTH STATE =====
+        // =============================================
+        onAuthStateChanged(auth, async (user) => {
+            loadingScreen.style.display = 'none';
+
+            if (user) {
+                currentUser = user;
+                loginScreen.style.display = 'none';
+                mainApp.classList.remove('hidden');
+
+                // الاستماع لتغييرات المستخدم
+                onSnapshot(doc(db, "users", user.uid), (snap) => {
+                    if (snap.exists()) {
+                        const data = snap.data();
+                        updateUI(data);
+                        loadRecentTransactions();
+                        loadCards();
+                    }
+                });
+
+            } else {
+                loginScreen.style.display = 'flex';
+                mainApp.classList.add('hidden');
+                currentUser = null;
+                userData = null;
+            }
+        });
+
+        console.log('🏦 Global Wallet جاهز!');
+        console.log('✅ المحفظة الإلكترونية تعمل بنجاح!');
+    </script>
+
+</body>
+</html>
