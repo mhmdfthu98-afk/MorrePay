@@ -52,14 +52,14 @@ async function generateWalletId() {
 
 exports.initializeWallet = onCall(async (request) => {
   const uid = assertAuth(request);
-  const name = cleanText(request.data?.name || "مستخدم MORRE", 80);
-  const phone = cleanText(request.auth.token.phone_number || "", 30);
+  const name = cleanText(request.data?.name || "", 80);
+  const email = cleanText(request.auth.token.email || "", 254).toLowerCase();
 
   if (name.length < 2) {
     throw new HttpsError("invalid-argument", "الاسم غير صحيح");
   }
-  if (!/^\+249\d{9}$/.test(phone)) {
-    throw new HttpsError("failed-precondition", "رقم الهاتف غير مرتبط بحساب موثق");
+  if (!email) {
+    throw new HttpsError("failed-precondition", "يجب تسجيل الدخول بحساب Google موثق");
   }
 
   const userRef = db.collection("users").doc(uid);
@@ -74,8 +74,8 @@ exports.initializeWallet = onCall(async (request) => {
 
   await userRef.create({
     name,
-    email: request.auth.token.email || "",
-    phone,
+    email,
+    phone: request.auth.token.phone_number || "",
     walletID,
     balance: 0,
     frozenBalance: 0,
@@ -96,24 +96,26 @@ exports.initializeWallet = onCall(async (request) => {
   return { ok: true, walletID };
 });
 
-exports.ensureAdminByPhone = onCall(async (request) => {
+exports.ensureAdminByEmail = onCall(async (request) => {
   const uid = assertAuth(request);
-  const phone = cleanText(request.auth.token.phone_number || "", 30);
-  const ADMIN_PHONE = "+249907760989";
+  const email = cleanText(request.auth.token.email || "", 254).toLowerCase();
+  const ADMIN_EMAIL = "mhmdfthu98@gmail.com";
 
-  if (phone !== ADMIN_PHONE) {
+  if (email !== ADMIN_EMAIL) {
     return { ok: true, admin: Boolean(request.auth.token.admin) };
   }
 
-  await getAuth().setCustomUserClaims(uid, { admin: true });
+  const userRecord = await getAuth().getUser(uid);
+  const existingClaims = userRecord.customClaims || {};
+  await getAuth().setCustomUserClaims(uid, { ...existingClaims, admin: true });
 
   await db.collection("users").doc(uid).set({
     isAdmin: true,
-    adminPhone: ADMIN_PHONE,
+    adminEmail: ADMIN_EMAIL,
     updatedAt: FieldValue.serverTimestamp()
   }, { merge: true });
 
-  logger.warn("Admin claim assigned by approved phone", { uid, phone: ADMIN_PHONE });
+  logger.warn("Admin claim assigned by approved email", { uid, email: ADMIN_EMAIL });
   return { ok: true, admin: true, refreshToken: true };
 });
 
