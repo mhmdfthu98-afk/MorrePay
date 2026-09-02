@@ -1,0 +1,123 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function isAdmin() {
+      return signedIn() && request.auth.token.admin == true;
+    }
+
+    // User profiles: balance, ledger, KYC status and admin fields are server-managed.
+    match /users/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+
+      allow create: if false;
+
+      allow update: if isOwner(uid)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'name',
+          'phone',
+          'theme',
+          'beneficiaries',
+          'cards',
+          'kycData',
+          'updatedAt',
+          'lastLogin'
+        ]);
+
+      allow delete: if false;
+    }
+
+    // Money movement is server-only.
+    match /transactions/{transactionId} {
+      allow read: if signedIn()
+        && (resource.data.senderId == request.auth.uid
+            || resource.data.receiverId == request.auth.uid
+            || isAdmin());
+      allow write: if false;
+    }
+
+    match /ledger/{ledgerId} {
+      allow read: if signedIn()
+        && (resource.data.userId == request.auth.uid || isAdmin());
+      allow write: if false;
+    }
+
+    // User notifications.
+    match /notifications/{notificationId} {
+      allow read: if signedIn()
+        && (resource.data.userId == request.auth.uid || isAdmin());
+
+      allow create: if false;
+
+      allow update: if signedIn()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'isRead',
+          'readAt'
+        ]);
+
+      allow delete: if signedIn()
+        && resource.data.userId == request.auth.uid;
+    }
+
+    match /depositRequests/{id} {
+      allow read: if signedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow write: if false;
+    }
+
+    match /withdrawRequests/{id} {
+      allow read: if signedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow write: if false;
+    }
+
+    // Payment requests are created and processed only by Cloud Functions.
+    match /paymentRequests/{id} {
+      allow read: if signedIn()
+        && (resource.data.requesterId == request.auth.uid || resource.data.payerId == request.auth.uid || isAdmin());
+      allow create, update, delete: if false;
+    }
+
+    // These will be implemented through backend functions later.
+    match /bankTransfers/{id} {
+      allow read, write: if false;
+    }
+
+    match /mobileTransfers/{id} {
+      allow read, write: if false;
+    }
+
+    match /users/{uid}/securitySessions/{sessionId} {
+      allow read, write: if false;
+    }
+
+    match /users/{uid}/pushTokens/{tokenId} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow create, update: if isOwner(uid)
+        && request.resource.data.token == tokenId
+        && request.resource.data.platform is string;
+      allow delete: if isOwner(uid);
+    }
+
+    match /adminNotifications/{id} {
+      allow read, write: if isAdmin();
+    }
+
+    match /auditLogs/{docId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,0 +1,16 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // مستندات KYC: الرفع والحذف للمستخدم صاحب الملف، لكن القراءة للأدمن فقط.
+    // المشاهدة للأدمن تتم عبر Cloud Function وتوقيع V4 مؤقت لمدة 5 دقائق.
+    match /kyc/{userId}/{sessionId}/{fileName} {
+      allow read: if request.auth != null && request.auth.token.admin == true;
+      allow write: if request.auth != null && request.auth.uid == userId
+        && request.resource.size < 10 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+      allow delete: if request.auth != null && request.auth.uid == userId
+        || request.auth != null && request.auth.token.admin == true;
+    }
+    match /{allPaths=**} { allow read, write: if false; }
+  }
+}

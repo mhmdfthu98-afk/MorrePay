@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>MORRE PAY | تسجيل الدخول</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-functions-compat.js"></script>
+<style>
+*{box-sizing:border-box;font-family:Cairo,sans-serif}body{margin:0;min-height:100vh;background:radial-gradient(circle at 15% 10%,#2b7fff 0,transparent 30%),linear-gradient(145deg,#07152f,#0b2c59 55%,#0b67b2);display:flex;align-items:center;justify-content:center;padding:18px;color:#10213b}.wrap{width:100%;max-width:430px}.brand{text-align:center;color:#fff;margin-bottom:18px}.brandIcon{width:78px;height:78px;margin:auto;border-radius:25px;display:grid;place-items:center;background:linear-gradient(145deg,#21a5ff,#1260d8);box-shadow:0 18px 45px #001a4c80;font-size:34px}.brand h1{font-size:32px;font-weight:900;margin:12px 0 0}.brand h1 span{color:#53c7ff}.brand p{opacity:.8;margin:3px 0}.card{background:#ffffffee;border:1px solid #ffffff80;border-radius:30px;padding:26px;box-shadow:0 25px 70px #00122f80;backdrop-filter:blur(18px)}.step{display:none}.step.active{display:block;animation:up .35s ease}@keyframes up{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}h2{margin:0 0 6px;font-size:23px;font-weight:900}.sub{color:#66758b;font-size:13px;margin-bottom:22px}.field{position:relative;margin:12px 0}.field i{position:absolute;right:15px;top:50%;transform:translateY(-50%);color:#7990aa}.field input{width:100%;height:54px;border:2px solid #e4ebf3;border-radius:16px;padding:0 46px 0 14px;font-size:16px;outline:none;transition:.2s;background:#f8fbff}.field input:focus{border-color:#1788ff;box-shadow:0 0 0 4px #1788ff18}.phoneRow{display:flex;gap:8px;direction:ltr}.prefix{width:92px;height:54px;border-radius:16px;border:2px solid #e4ebf3;background:#f8fbff;display:flex;align-items:center;justify-content:center;font-weight:800;color:#34495e}.phoneRow .field{flex:1;margin:0}.otp{display:flex;direction:ltr;gap:8px;justify-content:center;margin:18px 0}.otp input{width:48px;height:58px;text-align:center;font-size:24px;font-weight:900;border:2px solid #dfe8f2;border-radius:14px;outline:none}.otp input:focus{border-color:#1788ff;box-shadow:0 0 0 4px #1788ff18}.btn{width:100%;height:54px;border:0;border-radius:16px;background:linear-gradient(135deg,#168cff,#1260d8);color:#fff;font-weight:900;font-size:16px;cursor:pointer;box-shadow:0 12px 25px #1260d844}.btn:disabled{opacity:.55;cursor:not-allowed;box-shadow:none}.back{border:0;background:transparent;color:#39709f;font-weight:800;cursor:pointer;margin-bottom:8px}.info{display:flex;gap:10px;align-items:center;background:#eef7ff;border:1px solid #d7ebff;padding:12px;border-radius:15px;font-size:12px;color:#42627e;margin:15px 0}.recaptcha{min-height:1px;margin:6px 0}.terms{text-align:center;color:#8492a5;font-size:11px;margin-top:16px}.toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,100px);opacity:0;background:#162b45;color:#fff;padding:13px 20px;border-radius:14px;z-index:99;transition:.3s;max-width:90%;text-align:center;font-size:13px}.toast.show{opacity:1;transform:translate(-50%,0)}.toast.error{background:#d93045}.toast.success{background:#15965c}.loader{display:inline-block;width:17px;height:17px;border:2px solid #ffffff66;border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle}@keyframes spin{to{transform:rotate(360deg)}}@media(max-width:400px){.card{padding:21px}.otp input{width:43px;height:53px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand"><div class="brandIcon"><i class="fas fa-wallet"></i></div><h1>MORRE<span>PAY</span></h1><p>محفظتك الرقمية في السودان</p></div>
+  <div class="card">
+    <section id="phoneStep" class="step active">
+      <h2>مرحباً بك 👋</h2><div class="sub">أدخل رقم هاتفك السوداني للدخول إلى محفظتك</div>
+      <div class="field"><i class="fas fa-user"></i><input id="accountName" type="text" autocomplete="name" maxlength="80" placeholder="اكتب اسمك الذي سيظهر في الحساب والتحويلات" /></div>
+      <div class="phoneRow"><div class="prefix">🇸🇩 +249</div><div class="field"><i class="fas fa-phone"></i><input id="phone" type="tel" inputmode="numeric" autocomplete="tel" maxlength="9" placeholder="9XXXXXXXX" /></div></div>
+      <div id="recaptcha-container" class="recaptcha"></div>
+      <div class="info"><i class="fas fa-shield-halved"></i><span>سنرسل رمز تحقق لمرة واحدة عبر SMS. لا تشارك الرمز مع أي شخص.</span></div>
+      <button id="sendBtn" class="btn" onclick="sendCode()">إرسال رمز التحقق <i class="fas fa-arrow-left mr-1"></i></button>
+      <div class="terms">باستخدام MORRE PAY أنت توافق على شروط الخدمة وسياسة الخصوصية.</div>
+    </section>
+    <section id="otpStep" class="step">
+      <button class="back" onclick="backToPhone()"><i class="fas fa-arrow-right ml-1"></i> تغيير الرقم</button>
+      <h2>تحقق من رقمك 🔐</h2><div id="otpSub" class="sub">أدخل الرمز المرسل إلى هاتفك</div>
+      <div class="otp" id="otpBox"><input maxlength="1" inputmode="numeric"><input maxlength="1" inputmode="numeric"><input maxlength="1" inputmode="numeric"><input maxlength="1" inputmode="numeric"><input maxlength="1" inputmode="numeric"><input maxlength="1" inputmode="numeric"></div>
+      <button id="verifyBtn" class="btn" onclick="verifyCode()">دخول إلى المحفظة <i class="fas fa-unlock mr-1"></i></button>
+      <div class="text-center mt-4 text-xs text-slate-500">لم يصلك الرمز؟ <button id="resendBtn" class="font-bold text-blue-600" onclick="sendCode(true)">إعادة الإرسال</button></div>
+    </section>
+  </div>
+</div>
+<div id="toast" class="toast"></div>
+<script>
+const firebaseConfig={apiKey:"AIzaSyDywz3Cn2KkpbeBvkR-YQNJzdxENLHuqSk",authDomain:"morre-pay.firebaseapp.com",databaseURL:"https://morre-pay-default-rtdb.firebaseio.com",projectId:"morre-pay",storageBucket:"morre-pay.firebasestorage.app",messagingSenderId:"1047255810990",appId:"1:1047255810990:web:8e067d8bc827072474be3f",measurementId:"G-EZ74D6FHX1"};
+firebase.initializeApp(firebaseConfig);const auth=firebase.auth(),functions=firebase.functions();auth.languageCode='ar';let confirmationResult=null,recaptchaVerifier=null,sending=false;
+function toast(m,t=''){const e=document.getElementById('toast');e.textContent=m;e.className='toast show '+t;clearTimeout(e._t);e._t=setTimeout(()=>e.className='toast',4200)}
+function setStep(n){document.querySelectorAll('.step').forEach(e=>e.classList.remove('active'));document.getElementById(n+'Step').classList.add('active')}
+function normalizePhone(v){v=(v||'').replace(/\D/g,'');if(v.startsWith('249'))v=v.slice(3);if(v.startsWith('0'))v=v.slice(1);return v}
+function makeRecaptcha(){if(recaptchaVerifier)return;recaptchaVerifier=new firebase.auth.RecaptchaVerifier('recaptcha-container',{size:'invisible',callback:()=>{},'expired-callback':()=>{recaptchaVerifier=null}});recaptchaVerifier.render().catch(()=>{})}
+async function sendCode(resend=false){if(sending)return;const local=normalizePhone(document.getElementById('phone').value);const accountName=(document.getElementById('accountName').value||'').trim();if(accountName.length<2){toast('❌ اكتب اسم الحساب أولاً','error');document.getElementById('accountName').focus();return}if(!/^9\d{8}$/.test(local)){toast('❌ أدخل رقم سوداني صحيح مثل 912345678','error');return}const full='+249'+local;const btn=document.getElementById(resend?'resendBtn':'sendBtn');sending=true;if(!resend){document.getElementById('sendBtn').disabled=true;document.getElementById('sendBtn').innerHTML='<span class="loader"></span> جاري الإرسال...'}else btn.disabled=true;try{makeRecaptcha();confirmationResult=await auth.signInWithPhoneNumber(full,recaptchaVerifier);document.getElementById('otpSub').textContent='تم إرسال الرمز إلى +249 '+local;setStep('otp');document.querySelector('#otpBox input').focus();toast('✅ تم إرسال رمز التحقق','success')}catch(e){console.error(e);if(recaptchaVerifier){try{await recaptchaVerifier.clear()}catch(_){}recaptchaVerifier=null}let m='❌ تعذر إرسال الرمز';if(e.code==='auth/invalid-phone-number')m='❌ رقم الهاتف غير صحيح';if(e.code==='auth/too-many-requests')m='⏳ تم تجاوز حد المحاولات، حاول لاحقاً';if(e.code==='auth/quota-exceeded')m='⏳ تم تجاوز حصة الرسائل SMS حالياً';toast(m,'error')}finally{sending=false;document.getElementById('sendBtn').disabled=false;document.getElementById('sendBtn').innerHTML='إرسال رمز التحقق <i class="fas fa-arrow-left mr-1"></i>';if(btn)btn.disabled=false}}
+async function verifyCode(){if(!confirmationResult){toast('أرسل الرمز أولاً','error');return}const code=[...document.querySelectorAll('#otpBox input')].map(x=>x.value).join('');if(!/^\d{6}$/.test(code)){toast('❌ أدخل رمز التحقق المكون من 6 أرقام','error');return}const btn=document.getElementById('verifyBtn');btn.disabled=true;btn.innerHTML='<span class="loader"></span> جاري التحقق...';try{const cred=await confirmationResult.confirm(code);const user=cred.user;const init=functions.httpsCallable('initializeWallet');const accountName=(document.getElementById('accountName').value||'').trim();await init({name:accountName});try{const admin=functions.httpsCallable('ensureAdminByPhone');const r=await admin({});if(r.data?.admin){await user.getIdToken(true)}}catch(e){console.warn('admin sync',e)}toast('✅ تم التحقق، أهلاً بك في MORRE PAY','success');setTimeout(()=>location.replace('index.html'),500)}catch(e){console.error(e);let m='❌ رمز التحقق غير صحيح';if(e.code==='auth/code-expired')m='⏳ انتهت صلاحية الرمز، اطلب رمزاً جديداً';if(e.code==='auth/invalid-verification-code')m='❌ رمز التحقق غير صحيح';toast(m,'error')}finally{btn.disabled=false;btn.innerHTML='دخول إلى المحفظة <i class="fas fa-unlock mr-1"></i>'}}
+function backToPhone(){confirmationResult=null;setStep('phone')}
+const inputs=[...document.querySelectorAll('#otpBox input')];inputs.forEach((x,i)=>{x.addEventListener('input',()=>{x.value=x.value.replace(/\D/g,'');if(x.value&&i<inputs.length-1)inputs[i+1].focus();});x.addEventListener('keydown',e=>{if(e.key==='Backspace'&&!x.value&&i>0)inputs[i-1].focus()})});
+auth.onAuthStateChanged(user=>{if(user&&user.phoneNumber&&!location.pathname.includes('index.html'))location.replace('index.html');});
+</script>
+</body>
+</html>
