@@ -1323,7 +1323,7 @@
         // ===== 🔥 بيانات Firebase =====
         // =============================================
         const firebaseConfig = {
-            apiKey: "AIzaSyDywz3CnK2kpbeBvkR-YQNJzdxENLHuqSk"‚
+            apiKey: "AIzaSyDywz3Cn2KkpbeBvkR-YQNJzdxENLHuqSk",
             authDomain: "morre-pay.firebaseapp.com",
             databaseURL: "https://morre-pay-default-rtdb.firebaseio.com",
             projectId: "morre-pay",
@@ -1492,7 +1492,7 @@
     const adminButton = document.getElementById('adminButton');
     if (adminMenuItem) adminMenuItem.style.display = 'none';
     if (adminButton) adminButton.style.display = 'none';
-    if (currentUser && currentUser.phoneNumber === '+249907760989') {
+    if (currentUser) {
         currentUser.getIdTokenResult(true).then(token => {
             const verifiedAdmin = token.claims.admin === true;
             if (adminMenuItem) adminMenuItem.style.display = verifiedAdmin ? 'flex' : 'none';
@@ -3180,11 +3180,8 @@ async function setDefaultCard(cardId) {
             loadingScreen.style.display = 'none';
             
             if (user) {
-                // MORRE PAY requires phone/SMS authentication for every session.
-                if (!user.phoneNumber) {
-                    auth.signOut();
-                    return;
-                }
+                // MORRE PAY uses Google Authentication.
+                // Phone/SMS is no longer required to enter the wallet.
                 currentUser = user;
                 mainApp.style.display = 'block';
                 
