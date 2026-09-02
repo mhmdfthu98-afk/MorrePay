@@ -50,26 +50,53 @@ function setStep(n){document.querySelectorAll('.step').forEach(e=>e.classList.re
 async function signInWithGoogle(){
   if(signingIn)return;
   const btn=document.getElementById('googleBtn');
-  signingIn=true;btn.disabled=true;btn.innerHTML='<span class="loader"></span> جاري تسجيل الدخول...';
+  signingIn=true;
+  btn.disabled=true;
+  btn.innerHTML='<span class="loader"></span> جاري فتح تسجيل الدخول...';
   try{
     const provider=new firebase.auth.GoogleAuthProvider();
     provider.setCustomParameters({prompt:'select_account'});
-    const result=await auth.signInWithPopup(provider);
-    googleUser=result.user;
-    setStep('name');
-    document.getElementById('accountName').focus();
-    toast('✅ تم تسجيل الدخول بحساب Google','success');
+    // Redirect is more reliable than Popup on mobile browsers and Render.
+    await auth.signInWithRedirect(provider);
   }catch(e){
-    console.error(e);
-    let m='❌ تعذر تسجيل الدخول بحساب Google';
-    if(e.code==='auth/popup-closed-by-user')m='تم إغلاق نافذة تسجيل الدخول';
-    if(e.code==='auth/popup-blocked')m='❌ المتصفح منع نافذة Google، اسمح بالنوافذ المنبثقة وحاول مرة أخرى';
-    if(e.code==='auth/account-exists-with-different-credential')m='❌ هذا البريد مرتبط بطريقة تسجيل دخول أخرى';
+    console.error('Google redirect error:',e);
+    let m='❌ تعذر بدء تسجيل الدخول بحساب Google';
+    if(e.code==='auth/unauthorized-domain')m='❌ نطاق الموقع غير مضاف في Firebase Authentication';
+    if(e.code==='auth/operation-not-allowed')m='❌ تسجيل الدخول باستخدام Google غير مفعّل في Firebase';
+    if(e.code==='auth/network-request-failed')m='❌ تحقق من اتصال الإنترنت وحاول مرة أخرى';
     toast(m,'error');
-  }finally{
-    signingIn=false;btn.disabled=false;btn.innerHTML='<i class="fab fa-google mr-2"></i> تسجيل الدخول باستخدام Google';
+    signingIn=false;
+    btn.disabled=false;
+    btn.innerHTML='<i class="fab fa-google mr-2"></i> تسجيل الدخول باستخدام Google';
   }
 }
+
+// Receive the Google account after the redirect returns to this page.
+(async function handleGoogleRedirect(){
+  try{
+    const result=await auth.getRedirectResult();
+    if(result && result.user){
+      googleUser=result.user;
+      setStep('name');
+      setTimeout(()=>document.getElementById('accountName')?.focus(),50);
+      toast('✅ تم تسجيل الدخول بحساب Google','success');
+    }
+  }catch(e){
+    console.error('Google redirect result error:',e);
+    let m='❌ تعذر إكمال تسجيل الدخول بحساب Google';
+    if(e.code==='auth/unauthorized-domain')m='❌ نطاق الموقع غير مضاف في Firebase Authentication';
+    if(e.code==='auth/account-exists-with-different-credential')m='❌ هذا البريد مرتبط بطريقة تسجيل دخول أخرى';
+    if(e.code==='auth/network-request-failed')m='❌ مشكلة في الاتصال بالإنترنت، حاول مرة أخرى';
+    toast(m,'error');
+  }finally{
+    signingIn=false;
+    const btn=document.getElementById('googleBtn');
+    if(btn){
+      btn.disabled=false;
+      btn.innerHTML='<i class="fab fa-google mr-2"></i> تسجيل الدخول باستخدام Google';
+    }
+  }
+})();
 
 async function completeProfile(){
   if(completing)return;
