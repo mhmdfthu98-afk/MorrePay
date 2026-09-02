@@ -37,6 +37,7 @@
 </div>
 <div id="toast" class="toast"></div>
 <script>
+// تم تصحيح مفتاح الـ API هنا بالترتيب الصحيح (CnK2)
 const firebaseConfig={apiKey:"AIzaSyDywz3CnK2kpbeBvkR-YQNJzdxENLHuqSk",authDomain:"morre-pay.firebaseapp.com",databaseURL:"https://morre-pay-default-rtdb.firebaseio.com",projectId:"morre-pay",storageBucket:"morre-pay.firebasestorage.app",messagingSenderId:"1047255810990",appId:"1:1047255810990:web:8e067d8bc827072474be3f",measurementId:"G-EZ74D6FHX1"};
 firebase.initializeApp(firebaseConfig);
 const auth=firebase.auth(),functions=firebase.functions();
@@ -57,14 +58,12 @@ async function signInWithGoogle(){
     const provider=new firebase.auth.GoogleAuthProvider();
     provider.setCustomParameters({prompt:'select_account'});
 
-    // احفظ الجلسة على الجهاز حتى لا تضيع بعد الرجوع من Google.
     try{
       await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
     }catch(persistenceError){
       console.warn('Auth persistence warning:', persistenceError);
     }
 
-    // Render + Firebase: نبدأ بـ Popup، وهو الخيار الموصى به عندما لا نستخدم Firebase Hosting.
     const result=await auth.signInWithPopup(provider);
     googleUser=result.user;
     setStep('name');
@@ -73,7 +72,6 @@ async function signInWithGoogle(){
   }catch(e){
     console.error('Google sign-in error:',e);
 
-    // أخطاء Popup الشائعة على الهاتف.
     if(e.code==='auth/popup-blocked'){
       toast('❌ المتصفح منع نافذة Google. اسمح بالنوافذ المنبثقة ثم حاول مرة أخرى','error');
     }else if(e.code==='auth/popup-closed-by-user'){
@@ -95,7 +93,6 @@ async function signInWithGoogle(){
     }else if(e.code==='auth/internal-error'){
       toast('❌ Google أعاد خطأ داخلي. أعد المحاولة، وإذا تكرر أرسل لي نص الخطأ الظاهر في Console','error');
     }else{
-      // نُظهر كود الخطأ أثناء التشخيص حتى نصل للسبب الحقيقي بدل رسالة عامة.
       const code=(e.code||'unknown').replace('auth/','');
       const detail=e.message ? e.message.substring(0,140) : '';
       toast(`❌ فشل Google (${code})${detail?' — '+detail:''}`,'error');
@@ -107,7 +104,6 @@ async function signInWithGoogle(){
   }
 }
 
-// في حال عاد المستخدم من Google عبر Redirect لأي سبب، استقبل النتيجة هنا.
 (async function handleRedirectResult(){
   try{
     const result=await auth.getRedirectResult();
@@ -156,7 +152,6 @@ async function completeProfile(){
 auth.onAuthStateChanged(user=>{
   if(!user)return;
   if(!location.pathname.includes('index.html')){
-    // Google authentication succeeds first; the name is mandatory before entering the wallet.
     googleUser=user;
     setStep('name');
     setTimeout(()=>document.getElementById('accountName')?.focus(),50);
