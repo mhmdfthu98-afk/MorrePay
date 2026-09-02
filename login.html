@@ -38,7 +38,16 @@
 <div id="toast" class="toast"></div>
 <script>
 // تم تصحيح مفتاح الـ API هنا بالترتيب الصحيح (CnK2)
-const firebaseConfig={apiKey:"AIzaSyDywz3CnK2kpbeBvkR-YQNJzdxENLHuqSk",authDomain:"morre-pay.firebaseapp.com",databaseURL:"https://morre-pay-default-rtdb.firebaseio.com",projectId:"morre-pay",storageBucket:"morre-pay.firebasestorage.app",messagingSenderId:"1047255810990",appId:"1:1047255810990:web:8e067d8bc827072474be3f",measurementId:"G-EZ74D6FHX1"};
+const firebaseConfig = {
+            apiKey: "AIzaSyDywz3CnK2kpbeBvkR-YQNJzdxENLHuqSk"‚
+            authDomain: "morre-pay.firebaseapp.com",
+            databaseURL: "https://morre-pay-default-rtdb.firebaseio.com",
+            projectId: "morre-pay",
+            storageBucket: "morre-pay.firebasestorage.app",
+            messagingSenderId: "1047255810990",
+            appId: "1:1047255810990:web:8e067d8bc827072474be3f",
+            measurementId: "G-EZ74D6FHX1"
+        };
 firebase.initializeApp(firebaseConfig);
 const auth=firebase.auth(),functions=firebase.functions();
 auth.languageCode='ar';
