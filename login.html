@@ -18,37 +18,99 @@
 <div class="wrap">
   <div class="brand"><div class="brandIcon"><i class="fas fa-wallet"></i></div><h1>MORRE<span>PAY</span></h1><p>محفظتك الرقمية في السودان</p></div>
   <div class="card">
-    <section id="phoneStep" class="step active">
-      <h2>مرحباً بك 👋</h2><div class="sub">أدخل رقم هاتفك السوداني للدخول إلى محفظتك</div>
-      <div class="field"><i class="fas fa-user"></i><input id="accountName" type="text" autocomplete="name" maxlength="80" placeholder="اكتب اسمك الذي سيظهر في الحساب والتحويلات" /></div>
-      <div class="phoneRow"><div class="prefix">🇸🇩 +249</div><div class="field"><i class="fas fa-phone"></i><input id="phone" type="tel" inputmode="numeric" autocomplete="tel" maxlength="9" placeholder="9XXXXXXXX" /></div></div>
-      <div id="recaptcha-container" class="recaptcha"></div>
-      <div class="info"><i class="fas fa-shield-halved"></i><span>سنرسل رمز تحقق لمرة واحدة عبر SMS. لا تشارك الرمز مع أي شخص.</span></div>
-      <button id="sendBtn" class="btn" onclick="sendCode()">إرسال رمز التحقق <i class="fas fa-arrow-left mr-1"></i></button>
+    <section id="loginStep" class="step active">
+      <h2>مرحباً بك 👋</h2><div class="sub">سجّل الدخول إلى محفظتك باستخدام حساب Google</div>
+      <div class="info"><i class="fab fa-google"></i><span>استخدم حساب Google الخاص بك للدخول بأمان إلى MORRE PAY.</span></div>
+      <button id="googleBtn" class="btn" onclick="signInWithGoogle()">
+        <i class="fab fa-google mr-2"></i> تسجيل الدخول باستخدام Google
+      </button>
       <div class="terms">باستخدام MORRE PAY أنت توافق على شروط الخدمة وسياسة الخصوصية.</div>
     </section>
-    <section id="otpStep" class="step">
-      <button class="back" onclick="backToPhone()"><i class="fas fa-arrow-right ml-1"></i> تغيير الرقم</button>
-      <h2>تحقق من رقمك 🔐</h2><div id="otpSub" class="sub">أدخل الرمز المرسل إلى هاتفك</div>
-      <div class="otp" id="otpBox"><input maxlength="1" inputmode="numeric"><input maxlength="1" inputmode="numeric"><input maxlength="1" inputmode="numeric"><input maxlength="1" inputmode="numeric"><input maxlength="1" inputmode="numeric"><input maxlength="1" inputmode="numeric"></div>
-      <button id="verifyBtn" class="btn" onclick="verifyCode()">دخول إلى المحفظة <i class="fas fa-unlock mr-1"></i></button>
-      <div class="text-center mt-4 text-xs text-slate-500">لم يصلك الرمز؟ <button id="resendBtn" class="font-bold text-blue-600" onclick="sendCode(true)">إعادة الإرسال</button></div>
+
+    <section id="nameStep" class="step">
+      <h2>أكمل حسابك 👤</h2><div class="sub">بعد تسجيل الدخول، اكتب اسمك ليظهر في حسابك والتحويلات</div>
+      <div class="field"><i class="fas fa-user"></i><input id="accountName" type="text" autocomplete="name" maxlength="80" placeholder="اكتب اسمك الذي سيظهر في الحساب والتحويلات" /></div>
+      <div class="info"><i class="fas fa-shield-halved"></i><span>اسمك مطلوب لإكمال إنشاء محفظتك.</span></div>
+      <button id="continueBtn" class="btn" onclick="completeProfile()">متابعة إلى المحفظة <i class="fas fa-arrow-left mr-1"></i></button>
     </section>
   </div>
 </div>
 <div id="toast" class="toast"></div>
 <script>
-const firebaseConfig={apiKey:"AIzaSyDywz3Cn2KkpbeBvkR-YQNJzdxENLHuqSk",authDomain:"morre-pay.firebaseapp.com",databaseURL:"https://morre-pay-default-rtdb.firebaseio.com",projectId:"morre-pay",storageBucket:"morre-pay.firebasestorage.app",messagingSenderId:"1047255810990",appId:"1:1047255810990:web:8e067d8bc827072474be3f",measurementId:"G-EZ74D6FHX1"};
-firebase.initializeApp(firebaseConfig);const auth=firebase.auth(),functions=firebase.functions();auth.languageCode='ar';let confirmationResult=null,recaptchaVerifier=null,sending=false;
+const firebaseConfig={apiKey:"AIzaSyDywz3CnK2kpbeBvkR-YQNJzdxENLHuqSk",authDomain:"morre-pay.firebaseapp.com",databaseURL:"https://morre-pay-default-rtdb.firebaseio.com",projectId:"morre-pay",storageBucket:"morre-pay.firebasestorage.app",messagingSenderId:"1047255810990",appId:"1:1047255810990:web:8e067d8bc827072474be3f",measurementId:"G-EZ74D6FHX1"};
+firebase.initializeApp(firebaseConfig);
+const auth=firebase.auth(),functions=firebase.functions();
+auth.languageCode='ar';
+const ADMIN_EMAIL='mhmdfthu98@gmail.com';
+let googleUser=null, signingIn=false, completing=false;
+
 function toast(m,t=''){const e=document.getElementById('toast');e.textContent=m;e.className='toast show '+t;clearTimeout(e._t);e._t=setTimeout(()=>e.className='toast',4200)}
 function setStep(n){document.querySelectorAll('.step').forEach(e=>e.classList.remove('active'));document.getElementById(n+'Step').classList.add('active')}
-function normalizePhone(v){v=(v||'').replace(/\D/g,'');if(v.startsWith('249'))v=v.slice(3);if(v.startsWith('0'))v=v.slice(1);return v}
-function makeRecaptcha(){if(recaptchaVerifier)return;recaptchaVerifier=new firebase.auth.RecaptchaVerifier('recaptcha-container',{size:'invisible',callback:()=>{},'expired-callback':()=>{recaptchaVerifier=null}});recaptchaVerifier.render().catch(()=>{})}
-async function sendCode(resend=false){if(sending)return;const local=normalizePhone(document.getElementById('phone').value);const accountName=(document.getElementById('accountName').value||'').trim();if(accountName.length<2){toast('❌ اكتب اسم الحساب أولاً','error');document.getElementById('accountName').focus();return}if(!/^9\d{8}$/.test(local)){toast('❌ أدخل رقم سوداني صحيح مثل 912345678','error');return}const full='+249'+local;const btn=document.getElementById(resend?'resendBtn':'sendBtn');sending=true;if(!resend){document.getElementById('sendBtn').disabled=true;document.getElementById('sendBtn').innerHTML='<span class="loader"></span> جاري الإرسال...'}else btn.disabled=true;try{makeRecaptcha();confirmationResult=await auth.signInWithPhoneNumber(full,recaptchaVerifier);document.getElementById('otpSub').textContent='تم إرسال الرمز إلى +249 '+local;setStep('otp');document.querySelector('#otpBox input').focus();toast('✅ تم إرسال رمز التحقق','success')}catch(e){console.error(e);if(recaptchaVerifier){try{await recaptchaVerifier.clear()}catch(_){}recaptchaVerifier=null}let m='❌ تعذر إرسال الرمز';if(e.code==='auth/invalid-phone-number')m='❌ رقم الهاتف غير صحيح';if(e.code==='auth/too-many-requests')m='⏳ تم تجاوز حد المحاولات، حاول لاحقاً';if(e.code==='auth/quota-exceeded')m='⏳ تم تجاوز حصة الرسائل SMS حالياً';toast(m,'error')}finally{sending=false;document.getElementById('sendBtn').disabled=false;document.getElementById('sendBtn').innerHTML='إرسال رمز التحقق <i class="fas fa-arrow-left mr-1"></i>';if(btn)btn.disabled=false}}
-async function verifyCode(){if(!confirmationResult){toast('أرسل الرمز أولاً','error');return}const code=[...document.querySelectorAll('#otpBox input')].map(x=>x.value).join('');if(!/^\d{6}$/.test(code)){toast('❌ أدخل رمز التحقق المكون من 6 أرقام','error');return}const btn=document.getElementById('verifyBtn');btn.disabled=true;btn.innerHTML='<span class="loader"></span> جاري التحقق...';try{const cred=await confirmationResult.confirm(code);const user=cred.user;const init=functions.httpsCallable('initializeWallet');const accountName=(document.getElementById('accountName').value||'').trim();await init({name:accountName});try{const admin=functions.httpsCallable('ensureAdminByPhone');const r=await admin({});if(r.data?.admin){await user.getIdToken(true)}}catch(e){console.warn('admin sync',e)}toast('✅ تم التحقق، أهلاً بك في MORRE PAY','success');setTimeout(()=>location.replace('index.html'),500)}catch(e){console.error(e);let m='❌ رمز التحقق غير صحيح';if(e.code==='auth/code-expired')m='⏳ انتهت صلاحية الرمز، اطلب رمزاً جديداً';if(e.code==='auth/invalid-verification-code')m='❌ رمز التحقق غير صحيح';toast(m,'error')}finally{btn.disabled=false;btn.innerHTML='دخول إلى المحفظة <i class="fas fa-unlock mr-1"></i>'}}
-function backToPhone(){confirmationResult=null;setStep('phone')}
-const inputs=[...document.querySelectorAll('#otpBox input')];inputs.forEach((x,i)=>{x.addEventListener('input',()=>{x.value=x.value.replace(/\D/g,'');if(x.value&&i<inputs.length-1)inputs[i+1].focus();});x.addEventListener('keydown',e=>{if(e.key==='Backspace'&&!x.value&&i>0)inputs[i-1].focus()})});
-auth.onAuthStateChanged(user=>{if(user&&user.phoneNumber&&!location.pathname.includes('index.html'))location.replace('index.html');});
+
+async function signInWithGoogle(){
+  if(signingIn)return;
+  const btn=document.getElementById('googleBtn');
+  signingIn=true;btn.disabled=true;btn.innerHTML='<span class="loader"></span> جاري تسجيل الدخول...';
+  try{
+    const provider=new firebase.auth.GoogleAuthProvider();
+    provider.setCustomParameters({prompt:'select_account'});
+    const result=await auth.signInWithPopup(provider);
+    googleUser=result.user;
+    setStep('name');
+    document.getElementById('accountName').focus();
+    toast('✅ تم تسجيل الدخول بحساب Google','success');
+  }catch(e){
+    console.error(e);
+    let m='❌ تعذر تسجيل الدخول بحساب Google';
+    if(e.code==='auth/popup-closed-by-user')m='تم إغلاق نافذة تسجيل الدخول';
+    if(e.code==='auth/popup-blocked')m='❌ المتصفح منع نافذة Google، اسمح بالنوافذ المنبثقة وحاول مرة أخرى';
+    if(e.code==='auth/account-exists-with-different-credential')m='❌ هذا البريد مرتبط بطريقة تسجيل دخول أخرى';
+    toast(m,'error');
+  }finally{
+    signingIn=false;btn.disabled=false;btn.innerHTML='<i class="fab fa-google mr-2"></i> تسجيل الدخول باستخدام Google';
+  }
+}
+
+async function completeProfile(){
+  if(completing)return;
+  const user=auth.currentUser;
+  if(!user){setStep('login');toast('❌ سجّل الدخول بحساب Google أولاً','error');return}
+  const accountName=(document.getElementById('accountName').value||'').trim();
+  if(accountName.length<2){toast('❌ اكتب اسمك أولاً','error');document.getElementById('accountName').focus();return}
+  const btn=document.getElementById('continueBtn');
+  completing=true;btn.disabled=true;btn.innerHTML='<span class="loader"></span> جاري تجهيز المحفظة...';
+  try{
+    const init=functions.httpsCallable('initializeWallet');
+    await init({name:accountName});
+    try{
+      const admin=functions.httpsCallable('ensureAdminByEmail');
+      const r=await admin({});
+      if(r.data?.admin)await user.getIdToken(true);
+    }catch(e){console.warn('admin sync',e)}
+    toast('✅ تم تسجيل الدخول، أهلاً بك في MORRE PAY','success');
+    setTimeout(()=>location.replace('index.html'),500);
+  }catch(e){
+    console.error(e);
+    let m='❌ تعذر تجهيز المحفظة';
+    if(e.code==='functions/invalid-argument')m='❌ الاسم غير صحيح';
+    if(e.code==='functions/unauthenticated')m='❌ انتهت جلسة تسجيل الدخول، حاول مرة أخرى';
+    toast(m,'error');
+  }finally{
+    completing=false;btn.disabled=false;btn.innerHTML='متابعة إلى المحفظة <i class="fas fa-arrow-left mr-1"></i>';
+  }
+}
+
+auth.onAuthStateChanged(user=>{
+  if(!user)return;
+  if(!location.pathname.includes('index.html')){
+    // Google authentication succeeds first; the name is mandatory before entering the wallet.
+    googleUser=user;
+    setStep('name');
+    setTimeout(()=>document.getElementById('accountName')?.focus(),50);
+  }
+});
+
+document.getElementById('accountName').addEventListener('keydown',e=>{if(e.key==='Enter')completeProfile()});
 </script>
 </body>
 </html>
