@@ -52,27 +52,63 @@ async function signInWithGoogle(){
   const btn=document.getElementById('googleBtn');
   signingIn=true;
   btn.disabled=true;
-  btn.innerHTML='<span class="loader"></span> جاري فتح تسجيل الدخول...';
+  btn.innerHTML='<span class="loader"></span> جاري تسجيل الدخول...';
   try{
     const provider=new firebase.auth.GoogleAuthProvider();
     provider.setCustomParameters({prompt:'select_account'});
-    // Redirect is more reliable than Popup on mobile browsers and Render.
-    await auth.signInWithRedirect(provider);
+
+    // احفظ الجلسة على الجهاز حتى لا تضيع بعد الرجوع من Google.
+    try{
+      await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+    }catch(persistenceError){
+      console.warn('Auth persistence warning:', persistenceError);
+    }
+
+    // Render + Firebase: نبدأ بـ Popup، وهو الخيار الموصى به عندما لا نستخدم Firebase Hosting.
+    const result=await auth.signInWithPopup(provider);
+    googleUser=result.user;
+    setStep('name');
+    setTimeout(()=>document.getElementById('accountName')?.focus(),50);
+    toast('✅ تم تسجيل الدخول بحساب Google','success');
   }catch(e){
-    console.error('Google redirect error:',e);
-    let m='❌ تعذر بدء تسجيل الدخول بحساب Google';
-    if(e.code==='auth/unauthorized-domain')m='❌ نطاق الموقع غير مضاف في Firebase Authentication';
-    if(e.code==='auth/operation-not-allowed')m='❌ تسجيل الدخول باستخدام Google غير مفعّل في Firebase';
-    if(e.code==='auth/network-request-failed')m='❌ تحقق من اتصال الإنترنت وحاول مرة أخرى';
-    toast(m,'error');
+    console.error('Google sign-in error:',e);
+
+    // أخطاء Popup الشائعة على الهاتف.
+    if(e.code==='auth/popup-blocked'){
+      toast('❌ المتصفح منع نافذة Google. اسمح بالنوافذ المنبثقة ثم حاول مرة أخرى','error');
+    }else if(e.code==='auth/popup-closed-by-user'){
+      toast('تم إغلاق نافذة Google قبل إكمال تسجيل الدخول','error');
+    }else if(e.code==='auth/cancelled-popup-request'){
+      toast('⏳ توجد محاولة تسجيل دخول أخرى، انتظر لحظة ثم حاول','error');
+    }else if(e.code==='auth/unauthorized-domain'){
+      toast('❌ نطاق MORRE PAY غير مصرح به في Firebase Authentication','error');
+    }else if(e.code==='auth/operation-not-allowed'){
+      toast('❌ تسجيل الدخول باستخدام Google غير مفعّل في Firebase','error');
+    }else if(e.code==='auth/network-request-failed'){
+      toast('❌ تعذر الاتصال بخدمة Google. تحقق من الإنترنت وحاول مرة أخرى','error');
+    }else if(e.code==='auth/account-exists-with-different-credential'){
+      toast('❌ هذا البريد مرتبط بطريقة تسجيل دخول أخرى','error');
+    }else if(e.code==='auth/web-storage-unsupported'){
+      toast('❌ تخزين المتصفح غير متاح. افتح الموقع في Chrome العادي وليس داخل تطبيق آخر','error');
+    }else if(e.code==='auth/invalid-api-key'){
+      toast('❌ مفتاح Firebase API غير صحيح','error');
+    }else if(e.code==='auth/internal-error'){
+      toast('❌ Google أعاد خطأ داخلي. أعد المحاولة، وإذا تكرر أرسل لي نص الخطأ الظاهر في Console','error');
+    }else{
+      // نُظهر كود الخطأ أثناء التشخيص حتى نصل للسبب الحقيقي بدل رسالة عامة.
+      const code=(e.code||'unknown').replace('auth/','');
+      const detail=e.message ? e.message.substring(0,140) : '';
+      toast(`❌ فشل Google (${code})${detail?' — '+detail:''}`,'error');
+    }
+  }finally{
     signingIn=false;
     btn.disabled=false;
     btn.innerHTML='<i class="fab fa-google mr-2"></i> تسجيل الدخول باستخدام Google';
   }
 }
 
-// Receive the Google account after the redirect returns to this page.
-(async function handleGoogleRedirect(){
+// في حال عاد المستخدم من Google عبر Redirect لأي سبب، استقبل النتيجة هنا.
+(async function handleRedirectResult(){
   try{
     const result=await auth.getRedirectResult();
     if(result && result.user){
@@ -83,18 +119,8 @@ async function signInWithGoogle(){
     }
   }catch(e){
     console.error('Google redirect result error:',e);
-    let m='❌ تعذر إكمال تسجيل الدخول بحساب Google';
-    if(e.code==='auth/unauthorized-domain')m='❌ نطاق الموقع غير مضاف في Firebase Authentication';
-    if(e.code==='auth/account-exists-with-different-credential')m='❌ هذا البريد مرتبط بطريقة تسجيل دخول أخرى';
-    if(e.code==='auth/network-request-failed')m='❌ مشكلة في الاتصال بالإنترنت، حاول مرة أخرى';
-    toast(m,'error');
-  }finally{
-    signingIn=false;
-    const btn=document.getElementById('googleBtn');
-    if(btn){
-      btn.disabled=false;
-      btn.innerHTML='<i class="fab fa-google mr-2"></i> تسجيل الدخول باستخدام Google';
-    }
+    const code=(e.code||'unknown').replace('auth/','');
+    toast(`❌ تعذر إكمال تسجيل Google (${code})`,'error');
   }
 })();
 
