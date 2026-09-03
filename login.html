@@ -11,69 +11,159 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-functions-compat.js"></script>
 <style>
-*{box-sizing:border-box;font-family:Cairo,sans-serif}body{margin:0;min-height:100vh;background:radial-gradient(circle at 15% 10%,#2b7fff 0,transparent 30%),linear-gradient(145deg,#07152f,#0b2c59 55%,#0b67b2);display:flex;align-items:center;justify-content:center;padding:18px;color:#10213b}.wrap{width:100%;max-width:430px}.brand{text-align:center;color:#fff;margin-bottom:18px}.brandIcon{width:78px;height:78px;margin:auto;border-radius:25px;display:grid;place-items:center;background:linear-gradient(145deg,#21a5ff,#1260d8);box-shadow:0 18px 45px #001a4c80;font-size:34px}.brand h1{font-size:32px;font-weight:900;margin:12px 0 0}.brand h1 span{color:#53c7ff}.brand p{opacity:.8;margin:3px 0}.card{background:#ffffffee;border:1px solid #ffffff80;border-radius:30px;padding:26px;box-shadow:0 25px 70px #00122f80;backdrop-filter:blur(18px)}h2{margin:0 0 6px;font-size:23px;font-weight:900}.sub{color:#66758b;font-size:13px;margin-bottom:22px}.field{position:relative;margin:12px 0}.field i{position:absolute;right:15px;top:50%;transform:translateY(-50%);color:#7990aa}.field input{width:100%;height:54px;border:2px solid #e4ebf3;border-radius:16px;padding:0 46px 0 14px;font-size:16px;outline:none;transition:.2s;background:#f8fbff}.field input:focus{border-color:#1788ff;box-shadow:0 0 0 4px #1788ff18}.btn{width:100%;height:54px;border:0;border-radius:16px;background:linear-gradient(135deg,#168cff,#1260d8);color:#fff;font-weight:900;font-size:16px;cursor:pointer;box-shadow:0 12px 25px #1260d844}.btn:disabled{opacity:.55;cursor:not-allowed;box-shadow:none}.secondary{width:100%;height:48px;border:2px solid #dce7f2;border-radius:15px;background:#fff;color:#32628e;font-weight:800;font-size:14px;cursor:pointer;margin-top:10px}.info{display:flex;gap:10px;align-items:center;background:#eef7ff;border:1px solid #d7ebff;padding:12px;border-radius:15px;font-size:12px;color:#42627e;margin:15px 0}.terms{text-align:center;color:#8492a5;font-size:11px;margin-top:16px}.toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,100px);opacity:0;background:#162b45;color:#fff;padding:13px 20px;border-radius:14px;z-index:99;transition:.3s;max-width:90%;text-align:center;font-size:13px}.toast.show{opacity:1;transform:translate(-50%,0)}.toast.error{background:#d93045}.toast.success{background:#15965c}.loader{display:inline-block;width:17px;height:17px;border:2px solid #ffffff66;border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle}@keyframes spin{to{transform:rotate(360deg)}}.toggle{text-align:center;margin:15px 0 0;font-size:13px;color:#66758b}.toggle button{border:0;background:none;color:#1260d8;font-weight:900;cursor:pointer}@media(max-width:400px){.card{padding:21px}}
+*{box-sizing:border-box;font-family:Cairo,sans-serif}body{margin:0;min-height:100vh;background:radial-gradient(circle at 15% 10%,#2b7fff 0,transparent 30%),linear-gradient(145deg,#07152f,#0b2c59 55%,#0b67b2);display:flex;align-items:center;justify-content:center;padding:18px;color:#10213b}.wrap{width:100%;max-width:430px}.brand{text-align:center;color:#fff;margin-bottom:18px}.brandIcon{width:78px;height:78px;margin:auto;border-radius:25px;display:grid;place-items:center;background:linear-gradient(145deg,#21a5ff,#1260d8);box-shadow:0 18px 45px #001a4c80;font-size:34px}.brand h1{font-size:32px;font-weight:900;margin:12px 0 0}.brand h1 span{color:#53c7ff}.brand p{opacity:.8;margin:3px 0}.card{background:#ffffffee;border:1px solid #ffffff80;border-radius:30px;padding:26px;box-shadow:0 25px 70px #00122f80;backdrop-filter:blur(18px)}.step{display:none}.step.active{display:block;animation:up .35s ease}@keyframes up{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}h2{margin:0 0 6px;font-size:23px;font-weight:900}.sub{color:#66758b;font-size:13px;margin-bottom:22px}.field{position:relative;margin:12px 0}.field i{position:absolute;right:15px;top:50%;transform:translateY(-50%);color:#7990aa}.field input{width:100%;height:54px;border:2px solid #e4ebf3;border-radius:16px;padding:0 46px 0 14px;font-size:16px;outline:none;transition:.2s;background:#f8fbff}.field input:focus{border-color:#1788ff;box-shadow:0 0 0 4px #1788ff18}.phoneRow{display:flex;gap:8px;direction:ltr}.prefix{width:92px;height:54px;border-radius:16px;border:2px solid #e4ebf3;background:#f8fbff;display:flex;align-items:center;justify-content:center;font-weight:800;color:#34495e}.phoneRow .field{flex:1;margin:0}.otp{display:flex;direction:ltr;gap:8px;justify-content:center;margin:18px 0}.otp input{width:48px;height:58px;text-align:center;font-size:24px;font-weight:900;border:2px solid #dfe8f2;border-radius:14px;outline:none}.otp input:focus{border-color:#1788ff;box-shadow:0 0 0 4px #1788ff18}.btn{width:100%;height:54px;border:0;border-radius:16px;background:linear-gradient(135deg,#168cff,#1260d8);color:#fff;font-weight:900;font-size:16px;cursor:pointer;box-shadow:0 12px 25px #1260d844}.btn:disabled{opacity:.55;cursor:not-allowed;box-shadow:none}.back{border:0;background:transparent;color:#39709f;font-weight:800;cursor:pointer;margin-bottom:8px}.info{display:flex;gap:10px;align-items:center;background:#eef7ff;border:1px solid #d7ebff;padding:12px;border-radius:15px;font-size:12px;color:#42627e;margin:15px 0}.recaptcha{min-height:1px;margin:6px 0}.terms{text-align:center;color:#8492a5;font-size:11px;margin-top:16px}.toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,100px);opacity:0;background:#162b45;color:#fff;padding:13px 20px;border-radius:14px;z-index:99;transition:.3s;max-width:90%;text-align:center;font-size:13px}.toast.show{opacity:1;transform:translate(-50%,0)}.toast.error{background:#d93045}.toast.success{background:#15965c}.loader{display:inline-block;width:17px;height:17px;border:2px solid #ffffff66;border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle}@keyframes spin{to{transform:rotate(360deg)}}@media(max-width:400px){.card{padding:21px}.otp input{width:43px;height:53px}}
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="brand"><div class="brandIcon"><i class="fas fa-wallet"></i></div><h1>MORRE<span>PAY</span></h1><p>محفظتك الرقمية في السودان</p></div>
   <div class="card">
-    <section id="loginStep">
-      <h2>مرحباً بك 👋</h2>
-      <div class="sub">سجّل الدخول إلى محفظتك بالبريد الإلكتروني وكلمة المرور</div>
-      <div class="field"><i class="fas fa-envelope"></i><input id="loginEmail" type="email" autocomplete="email" placeholder="البريد الإلكتروني"></div>
-      <div class="field"><i class="fas fa-lock"></i><input id="loginPassword" type="password" autocomplete="current-password" placeholder="كلمة المرور"></div>
-      <button id="loginBtn" class="btn" onclick="signInWithEmail()">تسجيل الدخول <i class="fas fa-arrow-left mr-1"></i></button>
-      <button class="secondary" onclick="resetPassword()"><i class="fas fa-key ml-1"></i> نسيت كلمة المرور؟</button>
-      <div class="toggle">ليس لديك حساب؟ <button onclick="showRegister()">إنشاء حساب جديد</button></div>
+    <section id="loginStep" class="step active">
+      <h2>مرحباً بك 👋</h2><div class="sub">سجّل الدخول إلى محفظتك باستخدام حساب Google</div>
+      <div class="info"><i class="fab fa-google"></i><span>استخدم حساب Google الخاص بك للدخول بأمان إلى MORRE PAY.</span></div>
+      <button id="googleBtn" class="btn" onclick="signInWithGoogle()">
+        <i class="fab fa-google mr-2"></i> تسجيل الدخول باستخدام Google
+      </button>
       <div class="terms">باستخدام MORRE PAY أنت توافق على شروط الخدمة وسياسة الخصوصية.</div>
     </section>
 
-    <section id="registerStep" style="display:none">
-      <h2>إنشاء حساب جديد 👤</h2>
-      <div class="sub">أنشئ حساب MORRE PAY باستخدام بريدك الإلكتروني</div>
-      <div class="field"><i class="fas fa-user"></i><input id="registerName" type="text" autocomplete="name" maxlength="80" placeholder="الاسم الكامل"></div>
-      <div class="field"><i class="fas fa-envelope"></i><input id="registerEmail" type="email" autocomplete="email" placeholder="البريد الإلكتروني"></div>
-      <div class="field"><i class="fas fa-lock"></i><input id="registerPassword" type="password" autocomplete="new-password" placeholder="كلمة المرور (6 أحرف على الأقل)"></div>
-      <div class="field"><i class="fas fa-lock"></i><input id="registerPassword2" type="password" autocomplete="new-password" placeholder="تأكيد كلمة المرور"></div>
-      <div class="info"><i class="fas fa-shield-halved"></i><span>سيتم إنشاء محفظتك تلقائياً بعد إنشاء الحساب.</span></div>
-      <button id="registerBtn" class="btn" onclick="createAccount()">إنشاء الحساب <i class="fas fa-user-plus mr-1"></i></button>
-      <div class="toggle">لديك حساب بالفعل؟ <button onclick="showLogin()">تسجيل الدخول</button></div>
+    <section id="nameStep" class="step">
+      <h2>أكمل حسابك 👤</h2><div class="sub">بعد تسجيل الدخول، اكتب اسمك ليظهر في حسابك والتحويلات</div>
+      <div class="field"><i class="fas fa-user"></i><input id="accountName" type="text" autocomplete="name" maxlength="80" placeholder="اكتب اسمك الذي سيظهر في الحساب والتحويلات" /></div>
+      <div class="info"><i class="fas fa-shield-halved"></i><span>اسمك مطلوب لإكمال إنشاء محفظتك.</span></div>
+      <button id="continueBtn" class="btn" onclick="completeProfile()">متابعة إلى المحفظة <i class="fas fa-arrow-left mr-1"></i></button>
     </section>
   </div>
 </div>
 <div id="toast" class="toast"></div>
 <script>
-const firebaseConfig={apiKey:"AIzaSyDywz3Cn2KkpbeBvkR-YQNJzdxENLHuqSk",authDomain:"morre-pay.firebaseapp.com",databaseURL:"https://morre-pay-default-rtdb.firebaseio.com",projectId:"morre-pay",storageBucket:"morre-pay.firebasestorage.app",messagingSenderId:"1047255810990",appId:"1:1047255810990:web:8e067d8bc827072474be3f",measurementId:"G-EZ74D6FHX1"};
+const firebaseConfig={apiKey:"AIzaSyDywz3CnK2kpbeBvkR-YQNJzdxENLHuqSk",authDomain:"morre-pay.firebaseapp.com",databaseURL:"https://morre-pay-default-rtdb.firebaseio.com",projectId:"morre-pay",storageBucket:"morre-pay.firebasestorage.app",messagingSenderId:"1047255810990",appId:"1:1047255810990:web:8e067d8bc827072474be3f",measurementId:"G-EZ74D6FHX1"};
 firebase.initializeApp(firebaseConfig);
 const auth=firebase.auth(),functions=firebase.functions();
 auth.languageCode='ar';
-let busy=false;
+const ADMIN_EMAIL='mhmdfthu98@gmail.com';
+let googleUser=null, signingIn=false, completing=false;
+
 function toast(m,t=''){const e=document.getElementById('toast');e.textContent=m;e.className='toast show '+t;clearTimeout(e._t);e._t=setTimeout(()=>e.className='toast',4200)}
-function showLogin(){document.getElementById('loginStep').style.display='block';document.getElementById('registerStep').style.display='none'}
-function showRegister(){document.getElementById('loginStep').style.display='none';document.getElementById('registerStep').style.display='block';setTimeout(()=>document.getElementById('registerName').focus(),50)}
-async function signInWithEmail(){
- if(busy)return; const email=document.getElementById('loginEmail').value.trim(), password=document.getElementById('loginPassword').value;
- if(!email||!password){toast('❌ أدخل البريد الإلكتروني وكلمة المرور','error');return}
- busy=true;const btn=document.getElementById('loginBtn');btn.disabled=true;btn.innerHTML='<span class="loader"></span> جاري تسجيل الدخول...';
- try{await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);await auth.signInWithEmailAndPassword(email,password);toast('✅ تم تسجيل الدخول بنجاح','success');setTimeout(()=>location.replace('index.html'),350)}
- catch(e){console.error(e);const c=e.code||'';if(c==='auth/user-not-found'||c==='auth/invalid-credential')toast('❌ البريد أو كلمة المرور غير صحيحة','error');else if(c==='auth/invalid-email')toast('❌ البريد الإلكتروني غير صحيح','error');else if(c==='auth/too-many-requests')toast('❌ محاولات كثيرة. انتظر قليلاً ثم حاول','error');else toast('❌ تعذر تسجيل الدخول: '+(e.message||c),'error')}
- finally{busy=false;btn.disabled=false;btn.innerHTML='تسجيل الدخول <i class="fas fa-arrow-left mr-1"></i>'}
+function setStep(n){document.querySelectorAll('.step').forEach(e=>e.classList.remove('active'));document.getElementById(n+'Step').classList.add('active')}
+
+async function signInWithGoogle(){
+  if(signingIn)return;
+  const btn=document.getElementById('googleBtn');
+  signingIn=true;
+  btn.disabled=true;
+  btn.innerHTML='<span class="loader"></span> جاري تسجيل الدخول...';
+  try{
+    const provider=new firebase.auth.GoogleAuthProvider();
+    provider.setCustomParameters({prompt:'select_account'});
+
+    // احفظ الجلسة على الجهاز حتى لا تضيع بعد الرجوع من Google.
+    try{
+      await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+    }catch(persistenceError){
+      console.warn('Auth persistence warning:', persistenceError);
+    }
+
+    // Render + Firebase: نبدأ بـ Popup، وهو الخيار الموصى به عندما لا نستخدم Firebase Hosting.
+    const result=await auth.signInWithPopup(provider);
+    googleUser=result.user;
+    setStep('name');
+    setTimeout(()=>document.getElementById('accountName')?.focus(),50);
+    toast('✅ تم تسجيل الدخول بحساب Google','success');
+  }catch(e){
+    console.error('Google sign-in error:',e);
+
+    // أخطاء Popup الشائعة على الهاتف.
+    if(e.code==='auth/popup-blocked'){
+      toast('❌ المتصفح منع نافذة Google. اسمح بالنوافذ المنبثقة ثم حاول مرة أخرى','error');
+    }else if(e.code==='auth/popup-closed-by-user'){
+      toast('تم إغلاق نافذة Google قبل إكمال تسجيل الدخول','error');
+    }else if(e.code==='auth/cancelled-popup-request'){
+      toast('⏳ توجد محاولة تسجيل دخول أخرى، انتظر لحظة ثم حاول','error');
+    }else if(e.code==='auth/unauthorized-domain'){
+      toast('❌ نطاق MORRE PAY غير مصرح به في Firebase Authentication','error');
+    }else if(e.code==='auth/operation-not-allowed'){
+      toast('❌ تسجيل الدخول باستخدام Google غير مفعّل في Firebase','error');
+    }else if(e.code==='auth/network-request-failed'){
+      toast('❌ تعذر الاتصال بخدمة Google. تحقق من الإنترنت وحاول مرة أخرى','error');
+    }else if(e.code==='auth/account-exists-with-different-credential'){
+      toast('❌ هذا البريد مرتبط بطريقة تسجيل دخول أخرى','error');
+    }else if(e.code==='auth/web-storage-unsupported'){
+      toast('❌ تخزين المتصفح غير متاح. افتح الموقع في Chrome العادي وليس داخل تطبيق آخر','error');
+    }else if(e.code==='auth/invalid-api-key'){
+      toast('❌ مفتاح Firebase API غير صحيح','error');
+    }else if(e.code==='auth/internal-error'){
+      toast('❌ Google أعاد خطأ داخلي. أعد المحاولة، وإذا تكرر أرسل لي نص الخطأ الظاهر في Console','error');
+    }else{
+      // نُظهر كود الخطأ أثناء التشخيص حتى نصل للسبب الحقيقي بدل رسالة عامة.
+      const code=(e.code||'unknown').replace('auth/','');
+      const detail=e.message ? e.message.substring(0,140) : '';
+      toast(`❌ فشل Google (${code})${detail?' — '+detail:''}`,'error');
+    }
+  }finally{
+    signingIn=false;
+    btn.disabled=false;
+    btn.innerHTML='<i class="fab fa-google mr-2"></i> تسجيل الدخول باستخدام Google';
+  }
 }
-async function createAccount(){
- if(busy)return;const name=document.getElementById('registerName').value.trim(),email=document.getElementById('registerEmail').value.trim(),p=document.getElementById('registerPassword').value,p2=document.getElementById('registerPassword2').value;
- if(name.length<2){toast('❌ اكتب اسمك الكامل','error');return}if(!email){toast('❌ أدخل البريد الإلكتروني','error');return}if(p.length<6){toast('❌ كلمة المرور يجب أن تكون 6 أحرف على الأقل','error');return}if(p!==p2){toast('❌ كلمتا المرور غير متطابقتين','error');return}
- busy=true;const btn=document.getElementById('registerBtn');btn.disabled=true;btn.innerHTML='<span class="loader"></span> جاري إنشاء الحساب...';
- try{await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);const cred=await auth.createUserWithEmailAndPassword(email,p);await cred.user.updateProfile({displayName:name});
-   try{await functions.httpsCallable('initializeWallet')({name});}catch(e){console.error('initializeWallet',e);await auth.signOut();throw e}
-   toast('✅ تم إنشاء حسابك وتجهيز المحفظة','success');setTimeout(()=>location.replace('index.html'),500);
- }catch(e){console.error(e);const c=e.code||'';if(c==='auth/email-already-in-use')toast('❌ هذا البريد مسجل بالفعل، سجّل الدخول بدلاً من إنشاء حساب جديد','error');else if(c==='auth/invalid-email')toast('❌ البريد الإلكتروني غير صحيح','error');else if(c==='auth/weak-password')toast('❌ كلمة المرور ضعيفة','error');else if(c==='functions/unauthenticated')toast('❌ تعذر تجهيز المحفظة، أعد المحاولة','error');else toast('❌ تعذر إنشاء الحساب: '+(e.message||c),'error')}
- finally{busy=false;btn.disabled=false;btn.innerHTML='إنشاء الحساب <i class="fas fa-user-plus mr-1"></i>'}
+
+// في حال عاد المستخدم من Google عبر Redirect لأي سبب، استقبل النتيجة هنا.
+(async function handleRedirectResult(){
+  try{
+    const result=await auth.getRedirectResult();
+    if(result && result.user){
+      googleUser=result.user;
+      setStep('name');
+      setTimeout(()=>document.getElementById('accountName')?.focus(),50);
+      toast('✅ تم تسجيل الدخول بحساب Google','success');
+    }
+  }catch(e){
+    console.error('Google redirect result error:',e);
+    const code=(e.code||'unknown').replace('auth/','');
+    toast(`❌ تعذر إكمال تسجيل Google (${code})`,'error');
+  }
+})();
+
+async function completeProfile(){
+  if(completing)return;
+  const user=auth.currentUser;
+  if(!user){setStep('login');toast('❌ سجّل الدخول بحساب Google أولاً','error');return}
+  const accountName=(document.getElementById('accountName').value||'').trim();
+  if(accountName.length<2){toast('❌ اكتب اسمك أولاً','error');document.getElementById('accountName').focus();return}
+  const btn=document.getElementById('continueBtn');
+  completing=true;btn.disabled=true;btn.innerHTML='<span class="loader"></span> جاري تجهيز المحفظة...';
+  try{
+    const init=functions.httpsCallable('initializeWallet');
+    await init({name:accountName});
+    try{
+      const admin=functions.httpsCallable('ensureAdminByEmail');
+      const r=await admin({});
+      if(r.data?.admin)await user.getIdToken(true);
+    }catch(e){console.warn('admin sync',e)}
+    toast('✅ تم تسجيل الدخول، أهلاً بك في MORRE PAY','success');
+    setTimeout(()=>location.replace('index.html'),500);
+  }catch(e){
+    console.error(e);
+    let m='❌ تعذر تجهيز المحفظة';
+    if(e.code==='functions/invalid-argument')m='❌ الاسم غير صحيح';
+    if(e.code==='functions/unauthenticated')m='❌ انتهت جلسة تسجيل الدخول، حاول مرة أخرى';
+    toast(m,'error');
+  }finally{
+    completing=false;btn.disabled=false;btn.innerHTML='متابعة إلى المحفظة <i class="fas fa-arrow-left mr-1"></i>';
+  }
 }
-async function resetPassword(){const email=document.getElementById('loginEmail').value.trim();if(!email){toast('❌ اكتب بريدك الإلكتروني أولاً','error');return}try{await auth.sendPasswordResetEmail(email);toast('✅ تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك','success')}catch(e){if(e.code==='auth/user-not-found')toast('❌ لا يوجد حساب بهذا البريد','error');else toast('❌ تعذر إرسال رابط إعادة التعيين','error')}}
-auth.onAuthStateChanged(user=>{if(user&&!location.pathname.includes('index.html'))location.replace('index.html')});
-['loginEmail','loginPassword'].forEach(id=>document.getElementById(id).addEventListener('keydown',e=>{if(e.key==='Enter')signInWithEmail()}));
-['registerName','registerEmail','registerPassword','registerPassword2'].forEach(id=>document.getElementById(id).addEventListener('keydown',e=>{if(e.key==='Enter')createAccount()}));
+
+auth.onAuthStateChanged(user=>{
+  if(!user)return;
+  if(!location.pathname.includes('index.html')){
+    // Google authentication succeeds first; the name is mandatory before entering the wallet.
+    googleUser=user;
+    setStep('name');
+    setTimeout(()=>document.getElementById('accountName')?.focus(),50);
+  }
+});
+
+document.getElementById('accountName').addEventListener('keydown',e=>{if(e.key==='Enter')completeProfile()});
 </script>
 </body>
 </html>
