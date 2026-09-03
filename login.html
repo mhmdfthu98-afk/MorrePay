@@ -19,12 +19,23 @@
   <div class="brand"><div class="brandIcon"><i class="fas fa-wallet"></i></div><h1>MORRE<span>PAY</span></h1><p>محفظتك الرقمية في السودان</p></div>
   <div class="card">
     <section id="loginStep" class="step active">
-      <h2>مرحباً بك 👋</h2><div class="sub">سجّل الدخول إلى محفظتك باستخدام حساب Google</div>
-      <div class="info"><i class="fab fa-google"></i><span>استخدم حساب Google الخاص بك للدخول بأمان إلى MORRE PAY.</span></div>
-      <button id="googleBtn" class="btn" onclick="signInWithGoogle()">
-        <i class="fab fa-google mr-2"></i> تسجيل الدخول باستخدام Google
-      </button>
+      <h2>مرحباً بك 👋</h2><div class="sub">سجّل الدخول إلى محفظتك باستخدام رقم هاتفك</div>
+      <div class="phoneRow">
+        <div class="prefix">🇸🇩 +249</div>
+        <div class="field"><i class="fas fa-phone"></i><input id="phoneNumber" type="tel" inputmode="numeric" autocomplete="tel" maxlength="9" placeholder="912345678" /></div>
+      </div>
+      <div id="recaptcha-container" class="recaptcha"></div>
+      <button id="sendOtpBtn" class="btn" onclick="sendOTP()">إرسال رمز التحقق <i class="fas fa-paper-plane mr-1"></i></button>
+      <div class="terms">سيتم إرسال رمز تحقق SMS إلى رقمك. باستخدام MORRE PAY أنت توافق على شروط الخدمة وسياسة الخصوصية.</div>
       <div class="terms">باستخدام MORRE PAY أنت توافق على شروط الخدمة وسياسة الخصوصية.</div>
+    </section>
+
+    <section id="otpStep" class="step">
+      <button class="back" onclick="backToPhone()"><i class="fas fa-arrow-right"></i> تغيير الرقم</button>
+      <h2>رمز التحقق 🔐</h2><div class="sub">أدخل الرمز المرسل إلى <b id="otpPhone"></b></div>
+      <div class="otp"><input maxlength="1" inputmode="numeric" type="tel" oninput="otpInput(this,0)" /><input maxlength="1" inputmode="numeric" type="tel" oninput="otpInput(this,1)" /><input maxlength="1" inputmode="numeric" type="tel" oninput="otpInput(this,2)" /><input maxlength="1" inputmode="numeric" type="tel" oninput="otpInput(this,3)" /><input maxlength="1" inputmode="numeric" type="tel" oninput="otpInput(this,4)" /><input maxlength="1" inputmode="numeric" type="tel" oninput="otpInput(this,5)" /></div>
+      <button id="verifyBtn" class="btn" onclick="verifyOTP()">تأكيد الرمز <i class="fas fa-check mr-1"></i></button>
+      <div class="terms">لم يصلك الرمز؟ يمكنك العودة وإعادة الإرسال.</div>
     </section>
 
     <section id="nameStep" class="step">
@@ -42,92 +53,75 @@ firebase.initializeApp(firebaseConfig);
 const auth=firebase.auth(),functions=firebase.functions();
 auth.languageCode='ar';
 const ADMIN_EMAIL='mhmdfthu98@gmail.com';
-let googleUser=null, signingIn=false, completing=false;
+let confirmationResult=null, signingIn=false, completing=false, recaptchaVerifier=null;
 
 function toast(m,t=''){const e=document.getElementById('toast');e.textContent=m;e.className='toast show '+t;clearTimeout(e._t);e._t=setTimeout(()=>e.className='toast',4200)}
 function setStep(n){document.querySelectorAll('.step').forEach(e=>e.classList.remove('active'));document.getElementById(n+'Step').classList.add('active')}
 
-async function signInWithGoogle(){
-  if(signingIn)return;
-  const btn=document.getElementById('googleBtn');
-  signingIn=true;
-  btn.disabled=true;
-  btn.innerHTML='<span class="loader"></span> جاري تسجيل الدخول...';
-  try{
-    const provider=new firebase.auth.GoogleAuthProvider();
-    provider.setCustomParameters({prompt:'select_account'});
-
-    // احفظ الجلسة على الجهاز حتى لا تضيع بعد الرجوع من Google.
-    try{
-      await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-    }catch(persistenceError){
-      console.warn('Auth persistence warning:', persistenceError);
-    }
-
-    // Render + Firebase: نبدأ بـ Popup، وهو الخيار الموصى به عندما لا نستخدم Firebase Hosting.
-    const result=await auth.signInWithPopup(provider);
-    googleUser=result.user;
-    setStep('name');
-    setTimeout(()=>document.getElementById('accountName')?.focus(),50);
-    toast('✅ تم تسجيل الدخول بحساب Google','success');
-  }catch(e){
-    console.error('Google sign-in error:',e);
-
-    // أخطاء Popup الشائعة على الهاتف.
-    if(e.code==='auth/popup-blocked'){
-      toast('❌ المتصفح منع نافذة Google. اسمح بالنوافذ المنبثقة ثم حاول مرة أخرى','error');
-    }else if(e.code==='auth/popup-closed-by-user'){
-      toast('تم إغلاق نافذة Google قبل إكمال تسجيل الدخول','error');
-    }else if(e.code==='auth/cancelled-popup-request'){
-      toast('⏳ توجد محاولة تسجيل دخول أخرى، انتظر لحظة ثم حاول','error');
-    }else if(e.code==='auth/unauthorized-domain'){
-      toast('❌ نطاق MORRE PAY غير مصرح به في Firebase Authentication','error');
-    }else if(e.code==='auth/operation-not-allowed'){
-      toast('❌ تسجيل الدخول باستخدام Google غير مفعّل في Firebase','error');
-    }else if(e.code==='auth/network-request-failed'){
-      toast('❌ تعذر الاتصال بخدمة Google. تحقق من الإنترنت وحاول مرة أخرى','error');
-    }else if(e.code==='auth/account-exists-with-different-credential'){
-      toast('❌ هذا البريد مرتبط بطريقة تسجيل دخول أخرى','error');
-    }else if(e.code==='auth/web-storage-unsupported'){
-      toast('❌ تخزين المتصفح غير متاح. افتح الموقع في Chrome العادي وليس داخل تطبيق آخر','error');
-    }else if(e.code==='auth/invalid-api-key'){
-      toast('❌ مفتاح Firebase API غير صحيح','error');
-    }else if(e.code==='auth/internal-error'){
-      toast('❌ Google أعاد خطأ داخلي. أعد المحاولة، وإذا تكرر أرسل لي نص الخطأ الظاهر في Console','error');
-    }else{
-      // نُظهر كود الخطأ أثناء التشخيص حتى نصل للسبب الحقيقي بدل رسالة عامة.
-      const code=(e.code||'unknown').replace('auth/','');
-      const detail=e.message ? e.message.substring(0,140) : '';
-      toast(`❌ فشل Google (${code})${detail?' — '+detail:''}`,'error');
-    }
-  }finally{
-    signingIn=false;
-    btn.disabled=false;
-    btn.innerHTML='<i class="fab fa-google mr-2"></i> تسجيل الدخول باستخدام Google';
-  }
+function normalizeSudanPhone(v){
+  let n=(v||'').replace(/\D/g,'');
+  if(n.startsWith('249')) n=n.slice(3);
+  if(n.startsWith('0')) n=n.slice(1);
+  if(!/^9\d{8}$/.test(n)) return null;
+  return '+249'+n;
 }
 
-// في حال عاد المستخدم من Google عبر Redirect لأي سبب، استقبل النتيجة هنا.
-(async function handleRedirectResult(){
+function setupRecaptcha(){
+  if(recaptchaVerifier)return;
+  recaptchaVerifier=new firebase.auth.RecaptchaVerifier('recaptcha-container',{size:'normal',callback:()=>{},'expired-callback':()=>{recaptchaVerifier=null;document.getElementById('recaptcha-container').innerHTML=''}});
+  recaptchaVerifier.render();
+}
+
+async function sendOTP(){
+  if(signingIn)return;
+  const phone=normalizeSudanPhone(document.getElementById('phoneNumber').value);
+  if(!phone){toast('❌ أدخل رقم سوداني صحيح مثل 912345678','error');return}
+  const btn=document.getElementById('sendOtpBtn');
+  signingIn=true;btn.disabled=true;btn.innerHTML='<span class="loader"></span> جاري إرسال الرمز...';
   try{
-    const result=await auth.getRedirectResult();
-    if(result && result.user){
-      googleUser=result.user;
-      setStep('name');
-      setTimeout(()=>document.getElementById('accountName')?.focus(),50);
-      toast('✅ تم تسجيل الدخول بحساب Google','success');
-    }
+    setupRecaptcha();
+    const appVerifier=recaptchaVerifier;
+    confirmationResult=await auth.signInWithPhoneNumber(phone,appVerifier);
+    document.getElementById('otpPhone').textContent=phone;
+    setStep('otp');
+    document.querySelectorAll('.otp input')[0].focus();
+    toast('✅ تم إرسال رمز التحقق إلى هاتفك','success');
   }catch(e){
-    console.error('Google redirect result error:',e);
-    const code=(e.code||'unknown').replace('auth/','');
-    toast(`❌ تعذر إكمال تسجيل Google (${code})`,'error');
-  }
-})();
+    console.error(e);
+    if(recaptchaVerifier){try{recaptchaVerifier.clear()}catch(_){} recaptchaVerifier=null;document.getElementById('recaptcha-container').innerHTML=''}
+    let m='❌ تعذر إرسال رمز التحقق';
+    if(e.code==='auth/invalid-phone-number')m='❌ رقم الهاتف غير صحيح';
+    if(e.code==='auth/too-many-requests')m='❌ تم تجاوز عدد المحاولات، انتظر قليلًا ثم حاول';
+    if(e.code==='auth/quota-exceeded')m='❌ تم تجاوز حصة SMS للمشروع';
+    if(e.code==='auth/billing-not-enabled')m='❌ يجب تفعيل Billing في مشروع Firebase لاستخدام SMS';
+    toast(m,'error');
+  }finally{signingIn=false;btn.disabled=false;btn.innerHTML='إرسال رمز التحقق <i class="fas fa-paper-plane mr-1"></i>'}
+}
+
+async function verifyOTP(){
+  if(!confirmationResult)return;
+  const code=[...document.querySelectorAll('.otp input')].map(x=>x.value).join('');
+  if(!/^\d{6}$/.test(code)){toast('❌ أدخل رمز التحقق المكون من 6 أرقام','error');return}
+  const btn=document.getElementById('verifyBtn');btn.disabled=true;btn.innerHTML='<span class="loader"></span> جاري التحقق...';
+  try{await confirmationResult.confirm(code);setStep('name');document.getElementById('accountName').focus();toast('✅ تم التحقق من رقم الهاتف','success')}
+  catch(e){console.error(e);let m='❌ رمز التحقق غير صحيح';if(e.code==='auth/code-expired')m='❌ انتهت صلاحية الرمز، أرسل رمزًا جديدًا';toast(m,'error')}
+  finally{btn.disabled=false;btn.innerHTML='تأكيد الرمز <i class="fas fa-check mr-1"></i>'}
+}
+
+function backToPhone(){setStep('login');confirmationResult=null;}
+
+
+function otpInput(el,i){
+  el.value=el.value.replace(/\D/g,'').slice(-1);
+  const inputs=document.querySelectorAll('.otp input');
+  if(el.value && inputs[i+1])inputs[i+1].focus();
+  if([...inputs].every(x=>x.value))verifyOTP();
+}
 
 async function completeProfile(){
   if(completing)return;
   const user=auth.currentUser;
-  if(!user){setStep('login');toast('❌ سجّل الدخول بحساب Google أولاً','error');return}
+  if(!user){setStep('login');toast('❌ سجّل الدخول برقم الهاتف أولاً','error');return}
   const accountName=(document.getElementById('accountName').value||'').trim();
   if(accountName.length<2){toast('❌ اكتب اسمك أولاً','error');document.getElementById('accountName').focus();return}
   const btn=document.getElementById('continueBtn');
@@ -156,8 +150,7 @@ async function completeProfile(){
 auth.onAuthStateChanged(user=>{
   if(!user)return;
   if(!location.pathname.includes('index.html')){
-    // Google authentication succeeds first; the name is mandatory before entering the wallet.
-    googleUser=user;
+    // Phone authentication succeeds first; the name is mandatory before entering the wallet.
     setStep('name');
     setTimeout(()=>document.getElementById('accountName')?.focus(),50);
   }
