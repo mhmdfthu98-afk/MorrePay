@@ -1492,7 +1492,7 @@
     const adminButton = document.getElementById('adminButton');
     if (adminMenuItem) adminMenuItem.style.display = 'none';
     if (adminButton) adminButton.style.display = 'none';
-    if (currentUser) {
+    if (currentUser && currentUser.phoneNumber === '+249907760989') {
         currentUser.getIdTokenResult(true).then(token => {
             const verifiedAdmin = token.claims.admin === true;
             if (adminMenuItem) adminMenuItem.style.display = verifiedAdmin ? 'flex' : 'none';
@@ -3180,8 +3180,11 @@ async function setDefaultCard(cardId) {
             loadingScreen.style.display = 'none';
             
             if (user) {
-                // MORRE PAY uses Google Authentication.
-                // Phone/SMS is no longer required to enter the wallet.
+                // MORRE PAY requires phone/SMS authentication for every session.
+                if (!user.phoneNumber) {
+                    auth.signOut();
+                    return;
+                }
                 currentUser = user;
                 mainApp.style.display = 'block';
                 
